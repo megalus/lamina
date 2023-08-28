@@ -8,7 +8,7 @@ single function, which use Pydantic models to validate input and output data.
 ### Install
 
 ```shell
-$ pip install lamina
+$ pip install py-lamina
 ```
 
 This library is compatible with Python 3.9+.

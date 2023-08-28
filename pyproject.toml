@@ -44,7 +44,7 @@ upload_to_release = true
 build_command = "python -m pip install -U twine poetry && poetry build"
 
 [tool.poetry]
-name = "lamina"
+name = "py-lamina"
 version = "1.0.0"
 description = "Add a new layer (\"lâmina\") to AWS lambda functions"
 authors = ["Chris Maillefaud <chrismaille@users.noreply.github.com>"]
@@ -56,6 +56,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 4 - Beta",
     "Environment :: Plugins"
+]
+packages = [
+    { include = "lamina" },
 ]
 
 [tool.poetry.dependencies]
