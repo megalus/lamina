@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.2 (2023-08-28)
+
+### Fix
+
+* Add missing asyncio helper for running sync methods in asynchronous code. ([`f9ae6f2`](https://github.com/megalus/lamina/commit/f9ae6f2c7c30b77205b96c61d63665214ea0667d))
+
 ## v1.0.1 (2023-08-28)
 
 ### Fix
