@@ -19,7 +19,7 @@ single function, which use Pydantic models to validate input and output data.
 $ pip install py-lamina
 ```
 
-This library is compatible with Python 3.9+.
+This library is compatible with Python 3.9, 3.10 and 3.11.
 
 ---
 

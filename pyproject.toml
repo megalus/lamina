@@ -63,11 +63,13 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.9, <=3.11"
+asgiref = "*"
 loguru = "*"
 pydantic = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
+pytest-asyncio = "*"
 twine = "*"
 auto-changelog = "*"
 black = {version = "*", allow-prereleases = true}
