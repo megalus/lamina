@@ -1,5 +1,13 @@
 # Welcome to Lamina
 
+<p align="center">
+<a href="https://pypi.org/project/py-lamina/" target="_blank">
+<img alt="PyPI" src="https://img.shields.io/pypi/v/py-lamina"/></a>
+<a href="https://www.python.org" target="_blank">
+<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/py-lamina"/>
+</a>
+</p>
+
 This library adds a new layer ("lâmina") to AWS lambda functions, integrating synchronous and asynchronous code in a
 single function, which use Pydantic models to validate input and output data.
 
