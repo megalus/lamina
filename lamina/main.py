@@ -56,10 +56,26 @@ def lamina(
                 if isinstance(response, tuple):
                     response, status_code = response
 
-                if schema_out is None:
-                    body = json.dumps(response, cls=DecimalEncoder)
-                else:
-                    body = schema_out(**response).model_dump_json(by_alias=True)
+                try:
+                    if schema_out is None:
+                        body = json.dumps(response, cls=DecimalEncoder)
+                    else:
+                        body = schema_out(**response).model_dump_json(by_alias=True)
+                except Exception as e:
+                    # This is an Internal Server Error
+                    logger.error(f"Error when attempt to serialize response: {e}")
+                    status_code = 500
+                    body = json.dumps(
+                        [
+                            {
+                                "field": schema_out.__name__
+                                if schema_out
+                                else "DumpJson",
+                                "message": str(e),
+                            }
+                        ],
+                        cls=DecimalEncoder,
+                    )
 
                 return {
                     "statusCode": status_code,
