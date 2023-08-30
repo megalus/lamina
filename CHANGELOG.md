@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.4 (2023-08-30)
+
+### Fix
+
+* Remove poetry.lock from lib ([`779db8e`](https://github.com/megalus/lamina/commit/779db8e6607caf01df5ed8c55a5876551f22a6b5))
+
 ## v1.0.3 (2023-08-29)
 
 ### Fix
