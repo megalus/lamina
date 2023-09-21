@@ -23,12 +23,12 @@ def test_html_response():
     # Arrange
     @lamina(content_type=Lamina.HTML)
     def handler(request: Request):
-        return "<h1>hello world</h1>"
+        return "<html><h1>hello world</h1></html>"
 
     # Act
     response = handler({"body": '{"foo": "bar"}'}, None)
 
     # Assert
     assert response["statusCode"] == 200
-    assert response["body"] == "<h1>hello world</h1>"
+    assert response["body"] == "<html><h1>hello world</h1></html>"
     assert response["headers"] == {"Content-Type": "text/html; charset=utf-8"}

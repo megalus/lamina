@@ -46,6 +46,7 @@ def lamina(
                     context=context,
                 )
 
+                headers = {}
                 # check if function is a coroutine
                 if inspect.iscoroutinefunction(f):
                     response = asyncio.run(f(request))
@@ -53,7 +54,10 @@ def lamina(
                     response = f(request)
 
                 if isinstance(response, tuple):
-                    response, status_code = response
+                    status_code = response[1]
+                    if len(response) == 3:
+                        headers = response[2]
+                    response = response[0]
 
                 try:
                     body = response
@@ -78,11 +82,15 @@ def lamina(
                         cls=DecimalEncoder,
                     )
 
+                full_headers = {
+                    "Content-Type": content_type.value,
+                }
+                if headers:
+                    full_headers.update(headers)
+
                 return {
                     "statusCode": status_code,
-                    "headers": {
-                        "Content-Type": content_type.value,
-                    },
+                    "headers": full_headers,
                     "body": body,
                 }
             except ValidationError as e:

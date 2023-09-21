@@ -77,6 +77,36 @@ def handler(request: Request) -> Tuple[Dict[str, Any], int]:
     return response, 201
 ```
 
+### The Response Content Type
+Default content type is `application/json; charset=utf-8`. You can change it by defining the `content_type` parameter:
+
+```python
+@lamina(schema=ExampleInput, content_type=Lamina.HTML)
+def handler(request: Request) -> Tuple[str, int]:
+    html_404 = """
+        <html>
+            <head><title>404 Not Found</title></head>
+            <body>
+                <h1>404 Not Found</h1>
+            </body>
+        </html>
+    """
+    return html_404, 404
+```
+
+### The Response Headers
+Default header contains the Content Type defined in decorator or `{"Content-Type": "application/json; charset=utf-8"}`
+by default.
+You can add more headers it by returning a dict in the function return tuple:
+
+```python
+@lamina(schema=ExampleInput, content_type=Lamina.HTML)
+def handler(request: Request) -> str:
+    return None, 403, {"Location": "https://www.example.com"}
+```
+
+This dict will be merged with the default header.
+
 ### The Request object
 
 The `Request` object has the following attributes:
