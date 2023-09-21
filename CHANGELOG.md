@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.0 (2023-09-21)
+
+### Feature
+
+* Add custom headers support and content type updates for lamina ([`9cec3b6`](https://github.com/megalus/lamina/commit/9cec3b6dd9fe2792d7f99a16fff2941bbfe42e2b))
+
 ## v1.1.0 (2023-09-21)
 
 ### Feature
