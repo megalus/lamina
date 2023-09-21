@@ -8,9 +8,7 @@ from typing import Any, Dict, Optional, Type, Union
 from loguru import logger
 from pydantic import BaseModel, ValidationError
 
-from lamina.helpers import DecimalEncoder
-
-CHARSET_UTF = "application/json; charset=utf-8"
+from lamina.helpers import DecimalEncoder, Lamina
 
 
 @dataclass
@@ -23,6 +21,7 @@ class Request:
 def lamina(
     schema_in: Optional[Type[BaseModel]] = None,
     schema_out: Optional[Type[BaseModel]] = None,
+    content_type: Lamina = Lamina.JSON,
 ):
     def decorator(f: callable):
         @functools.wraps(f)
@@ -57,10 +56,12 @@ def lamina(
                     response, status_code = response
 
                 try:
-                    if schema_out is None:
-                        body = json.dumps(response, cls=DecimalEncoder)
-                    else:
-                        body = schema_out(**response).model_dump_json(by_alias=True)
+                    body = response
+                    if content_type == Lamina.JSON:
+                        if schema_out is None:
+                            body = json.dumps(response, cls=DecimalEncoder)
+                        else:
+                            body = schema_out(**response).model_dump_json(by_alias=True)
                 except Exception as e:
                     # This is an Internal Server Error
                     logger.error(f"Error when attempt to serialize response: {e}")
@@ -80,7 +81,7 @@ def lamina(
                 return {
                     "statusCode": status_code,
                     "headers": {
-                        "Content-Type": CHARSET_UTF,
+                        "Content-Type": content_type.value,
                     },
                     "body": body,
                 }
@@ -98,7 +99,7 @@ def lamina(
                 return {
                     "statusCode": 400,
                     "body": json.dumps(messages),
-                    "content-type": CHARSET_UTF,
+                    "content-type": content_type.value,
                 }
             except (ValueError, TypeError) as e:
                 message = f"Error when attempt to read received body: {event['body']}."
@@ -107,7 +108,7 @@ def lamina(
                     "statusCode": 400,
                     "body": json.dumps(message),
                     "headers": {
-                        "Content-Type": CHARSET_UTF,
+                        "Content-Type": content_type.value,
                     },
                 }
 
