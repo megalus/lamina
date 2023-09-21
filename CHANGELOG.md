@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.1 (2023-09-21)
+
+### Fix
+
+* Normalize import method from package ([`e64a404`](https://github.com/megalus/lamina/commit/e64a40435d1b3f9a85c76fd74ac62da84e5886ec))
+
 ## v1.2.0 (2023-09-21)
 
 ### Feature
