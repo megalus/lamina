@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.0 (2023-09-21)
+
+### Feature
+
+* Add support for content type declaration in lamina decorator ([`15f4dfb`](https://github.com/megalus/lamina/commit/15f4dfbca6a9e6385cd61e2c52e94aa90198a22e))
+
 ## v1.0.4 (2023-08-30)
 
 ### Fix
