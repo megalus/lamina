@@ -1,3 +1,7 @@
-from lamina.main import Request, lamina  # noqa F401
+from lamina.main import Request, lamina
+from lamina.helpers import Lamina
+
 
 __version__ = "1.2.0"
+
+__all__ = ["Request", "lamina", "Lamina"]
