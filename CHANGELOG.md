@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v2.0.0 (2023-10-03)
+
+### Feature
+
+* Update Python version support ([`960848c`](https://github.com/megalus/lamina/commit/960848c8cb79b846938a73064520148dfb9100f5))
+
+### Breaking
+
+* Update Python version support ([`960848c`](https://github.com/megalus/lamina/commit/960848c8cb79b846938a73064520148dfb9100f5))
+
 ## v1.2.1 (2023-09-21)
 
 ### Fix
