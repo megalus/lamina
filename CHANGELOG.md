@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v2.0.1 (2023-10-03)
+
+### Fix
+
+* Fix pyproject.toml python versions ([`ad798ad`](https://github.com/megalus/lamina/commit/ad798ad6f9e00e23e306b71a9be53b2680677c22))
+
 ## v2.0.0 (2023-10-03)
 
 ### Feature
