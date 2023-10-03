@@ -1,4 +1,4 @@
-from lamina import lamina, Request
+from lamina import Request, lamina
 from lamina.helpers import Lamina
 
 
@@ -17,7 +17,7 @@ def test_403_response():
 
     # Assert
     assert response["statusCode"] == 403
-    assert response["body"] == None
+    assert response["body"] is None
     assert response["headers"] == {
         "Content-Type": "text/html; charset=utf-8",
         "Location": "https://foo.bar",

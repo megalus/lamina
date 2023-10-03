@@ -1,6 +1,5 @@
-from lamina.main import Request, lamina
 from lamina.helpers import Lamina
-
+from lamina.main import Request, lamina
 
 __version__ = "1.2.1"
 
