@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v2.1.0 (2024-09-02)
+
+### Feature
+
+* Logger internal server error exception ([`0b259e4`](https://github.com/megalus/lamina/commit/0b259e449da29895444c267f3c3646e90967a5b6))
+
 ## v2.0.2 (2023-10-03)
 
 ### Fix
