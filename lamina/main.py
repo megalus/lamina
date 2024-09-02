@@ -119,6 +119,15 @@ def lamina(
                         "Content-Type": content_type.value,
                     },
                 }
+            except Exception as e:
+                logger.exception(e)
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps(str(e)),
+                    "headers": {
+                        "Content-Type": content_type.value,
+                    },
+                }
 
         return wrapper
 
