@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v2.1.1 (2024-09-02)
+
+### Fix
+
+* Return generic error message as json ([`ebfc19c`](https://github.com/megalus/lamina/commit/ebfc19c03175218783609a0ab58dd974300c61d0))
+
 ## v2.1.0 (2024-09-02)
 
 ### Feature
