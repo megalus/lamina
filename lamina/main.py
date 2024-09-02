@@ -123,9 +123,9 @@ def lamina(
                 logger.exception(e)
                 return {
                     "statusCode": 500,
-                    "body": json.dumps(str(e)),
+                    "body": json.dumps({"error_message": str(e)}),
                     "headers": {
-                        "Content-Type": content_type.value,
+                        "Content-Type": "application/json; charset=utf-8",
                     },
                 }
 
