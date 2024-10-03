@@ -22,6 +22,7 @@ def lamina(
     schema_in: Optional[Type[BaseModel]] = None,
     schema_out: Optional[Type[BaseModel]] = None,
     content_type: Lamina = Lamina.JSON,
+        step_functions: bool = False,
 ):
     def decorator(f: callable):
         @functools.wraps(f)
@@ -35,9 +36,9 @@ def lamina(
 
             try:
                 if schema_in is None:
-                    data = event["body"]
+                    data = event["body"] if not step_functions else event
                 else:
-                    request_body = json.loads(event["body"])
+                    request_body = json.loads(event["body"]) if not step_functions else json.load(event)
                     data = schema_in(**request_body)
                 status_code = 200
                 request = Request(
