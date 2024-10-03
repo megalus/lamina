@@ -41,7 +41,7 @@ def lamina(
                     request_body = (
                         json.loads(event["body"])
                         if not step_functions
-                        else json.load(event)
+                        else json.loads(event)
                     )
                     data = schema_in(**request_body)
                 status_code = 200
