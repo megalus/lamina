@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v2.3.0 (2024-10-03)
+
+### Feature
+
+* Add step functions arg ([`c254e07`](https://github.com/megalus/lamina/commit/c254e0765aa1a26331c388d98cb0d1d39dbcf146))
+
 ## v2.2.0 (2024-10-03)
 
 ### Feature
