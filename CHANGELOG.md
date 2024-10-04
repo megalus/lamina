@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v2.3.2 (2024-10-04)
+
+### Fix
+
+* Event in step function ([`f743f03`](https://github.com/megalus/lamina/commit/f743f03efc7dd44f9bd67ad0b5a2987656e3254f))
+
 ## v2.3.1 (2024-10-04)
 
 ### Fix
