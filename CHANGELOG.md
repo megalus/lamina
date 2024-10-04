@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v2.3.1 (2024-10-04)
+
+### Fix
+
+* Error in logs ([`0a276f1`](https://github.com/megalus/lamina/commit/0a276f120be87b07234692a4b68aa13e1c556bf9))
+
 ## v2.3.0 (2024-10-03)
 
 ### Feature
