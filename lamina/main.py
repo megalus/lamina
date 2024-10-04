@@ -115,7 +115,7 @@ def lamina(
                     "content-type": content_type.value,
                 }
             except (ValueError, TypeError) as e:
-                message = f"Error when attempt to read received body: {event['body']}."
+                message = f"Error when attempt to read received event: {event}."
                 logger.error(str(e))
                 return {
                     "statusCode": 400,
