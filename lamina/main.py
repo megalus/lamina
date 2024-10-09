@@ -76,9 +76,9 @@ def lamina(
                     body = json.dumps(
                         [
                             {
-                                "field": schema_out.__name__
-                                if schema_out
-                                else "DumpJson",
+                                "field": (
+                                    schema_out.__name__ if schema_out else "DumpJson"
+                                ),
                                 "message": str(e),
                             }
                         ],
@@ -99,9 +99,9 @@ def lamina(
             except ValidationError as e:
                 messages = [
                     {
-                        "field": error["loc"][0]
-                        if error.get("loc")
-                        else "ModelValidation",
+                        "field": (
+                            error["loc"][0] if error.get("loc") else "ModelValidation"
+                        ),
                         "message": error["msg"],
                     }
                     for error in e.errors()
