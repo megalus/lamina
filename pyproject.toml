@@ -1,5 +1,5 @@
 [tool.black]
-target-version = ['py39']
+target-version = ['py312']
 include = '\.pyi?$'
 line-length = 88
 exclude = '''
@@ -34,7 +34,7 @@ ensure_newline_before_comments = true
 line_length = 88
 
 [tool.semantic_release]
-version_variable = [
+version_variables = [
     "lamina/__init__.py:__version__",
     "pyproject.toml:version"
 ]
@@ -62,7 +62,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">3.9,<4"
+python = ">=3.11,<4"
 asgiref = "*"
 loguru = "*"
 pydantic = "*"
