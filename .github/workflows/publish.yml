@@ -47,17 +47,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.release.outputs.tag }}
-
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup | Checkout Project
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Docs | Install MKDocs
-        run: pip install mkdocs-material
-
-      - name: Docs | Publish Docs
-        run: mkdocs gh-deploy --force
