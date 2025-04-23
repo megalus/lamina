@@ -8,7 +8,7 @@ Always use type hints in the code. Always use TypeDicts for dictionaries.
 
 Always use dataclasses for objects.
 
-Always add docstrings in functions with more than seven lines of code. Use Google style.
+Always add docstrings in objects with more than seven lines of code. Use Google style.
 
 Use `pre-commit run --all` to check for linter and format errors.
 
@@ -16,7 +16,21 @@ Project python version is 3.11.10.
 
 This is a public python library hosted in PyPI. All configuration is inside `pyproject.toml` file.
 
-Use semantic versioning for commit messages. Use `fix:` if new code only changes or adds tests. Use `feat:` if the decorator is changed. Use `chore:` if the non-test code is changed but not the decorator. Use `docs:` if the documentation is changed. Use `refactor:` if the code is changed but not the decorator and not the tests.
+Use semantic versioning for commit messages. Create a one-line commit. Do not use "`".
+
+Use `feat:` if commit create new code in both ./lamina and ./tests.
+
+Use `fix:` if commit only changes the code in both ./lamina and ./tests.
+
+Use `chore:` if commit changes files outside ./lamina and ./tests.
+
+Use `BREAKING CHANGE:` if a python version changes in pyproject.toml.
+
+Use `ci:` if commit changes files only in ./github or the pyproject.toml.
+
+Use `docs:` if commit changes files only in README.
+
+Use `refactor:` if commit changes files in ./src but not in ./tests.
 
 Project versioning is done during GitHub actions `.github/publish.yml` workflow, using the [auto-changelog](https://github.com/KeNaCo/auto-changelog) library.
 
@@ -29,3 +43,5 @@ README always contains [shields.io](https://shields.io/docs) badges for (when ap
 Always use mermaid diagrams on docs.
 
 Always use English on code and docs.
+
+Do not run terminal commands until Jetbrains fixes Junie support to WSL.

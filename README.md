@@ -1,4 +1,4 @@
-# Welcome to Lamina
+<h1 align="center">Welcome to Lamina</h1>
 
 <p align="center">
 <a href="https://pypi.org/project/py-lamina/" target="_blank">
