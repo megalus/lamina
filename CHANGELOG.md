@@ -1,6 +1,31 @@
 # CHANGELOG
 
 
+## v4.0.0 (2025-09-09)
+
+### Breaking
+
+* feat!: v.4.0 - BREAKING CHANGE ([`18fa561`](https://github.com/megalus/lamina/commit/18fa561dd0f34aeb3263334df720344aac36d23c))
+
+### Chores
+
+* chore: fix precommit ([`0cb1175`](https://github.com/megalus/lamina/commit/0cb117587a1d573ce572f6aaab6f3d92a26a225b))
+
+### Continuous Integration
+
+* ci: add edit runs ([`a8c3914`](https://github.com/megalus/lamina/commit/a8c3914633b694e2c4dd66a2fd2749482fae1d2d))
+
+* ci: remove docs in actions ([`44cc5c6`](https://github.com/megalus/lamina/commit/44cc5c6ae364bbac68fefde3a68eff0640db8b54))
+
+### Documentation
+
+* docs: update coding guidelines and README formatting ([`fa8f4e6`](https://github.com/megalus/lamina/commit/fa8f4e68eed1660a2cf9e43f13212432b02e5cf4))
+
+* docs: enhance README and add project guidelines
+
+Updated the README to include detailed usage examples, installation steps, and project architecture with a mermaid diagram. Added a `guidelines.md` file for contributor instructions and coding standards. ([`77db480`](https://github.com/megalus/lamina/commit/77db480c68ea220da9ffead9300bcb53c531fa44))
+
+
 ## v3.0.0 (2024-10-09)
 
 ### Breaking
