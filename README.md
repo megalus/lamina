@@ -9,6 +9,9 @@
 <a href="https://github.com/megalus/lamina/blob/main/LICENSE" target="_blank">
 <img alt="License: MIT" src="https://img.shields.io/github/license/megalus/lamina"/>
 </a>
+<a href="https://github.com/megalus/lamina/actions/workflows/tests.yml" target="_blank">
+<img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/megalus/lamina/tests.yml?branch=main"/>
+</a>
 </p>
 
 ## Overview
@@ -146,6 +149,74 @@ def handler(request: Request):
         "Cache-Control": "max-age=3600",
         "X-Custom-Header": "custom-value"
     }
+```
+
+## Hooks
+
+Lamina provides four extensibility points executed around your handler.
+
+Configuration (pyproject.toml):
+
+```toml
+[tool.lamina]
+pre_parse = "lamina.hooks.pre_parse"
+pre_execute = "lamina.hooks.pre_execute"
+pos_execute = "lamina.hooks.pos_execute"
+pre_response = "lamina.hooks.pre_response"
+```
+
+Environment variables override these values at runtime:
+- LAMINA_PRE_PARSE
+- LAMINA_PRE_EXECUTE
+- LAMINA_POS_EXECUTE
+- LAMINA_PRE_RESPONSE
+
+Hook signatures and responsibilities:
+- pre_parse(event, context) -> event
+- pre_execute(request, event, context) -> request
+- pos_execute(response, request) -> response
+- pre_response(body, request) -> body
+
+```mermaid
+sequenceDiagram
+    participant API as AWS/API Gateway
+    participant L as Lamina Decorator
+    participant PreParse as pre_parse
+    participant Pre as pre_execute
+    participant H as Handler
+    participant Pos as pos_execute
+    participant PreResp as pre_response
+
+    API->>L: event, context
+    L->>PreParse: pre_parse(event, context)
+    PreParse-->>L: event
+    L->>H: Request(data, event, context)
+    L->>Pre: pre_execute(Request, event, context)
+    Pre-->>L: Request
+    H-->>L: response | (response, status, headers)
+    L->>Pos: pos_execute(response, Request)
+    Pos-->>L: response
+    L->>PreResp: pre_response(body, Request)
+    PreResp-->>L: body
+    L-->>API: statusCode, headers, body
+```
+
+Example customizing hooks via env:
+
+```python
+import os
+from lamina import lamina, Request
+
+# Somewhere early in your app setup
+os.environ["LAMINA_PRE_PARSE"] = "myproj.hooks:pre_parse"
+os.environ["LAMINA_PRE_EXECUTE"] = "myproj.hooks:pre"
+os.environ["LAMINA_POS_EXECUTE"] = "myproj.hooks:post"
+os.environ["LAMINA_PRE_RESPONSE"] = "myproj.hooks:pre_response"
+
+@lamina()
+def handler(request: Request):
+    # The request may be modified by pre_execute
+    return {"hello": "world"}
 ```
 
 ### The Request Object

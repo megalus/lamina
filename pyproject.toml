@@ -67,12 +67,20 @@ asgiref = "*"
 loguru = "*"
 pydantic = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.lamina]
+pre_parse = "lamina.hooks.pre_parse"
+pre_execute = "lamina.hooks.pre_execute"
+pos_execute = "lamina.hooks.pos_execute"
+pre_response = "lamina.hooks.pre_response"
+
+[tool.poetry.group.dev.dependencies]
 pytest = "*"
+pytest-cov = "*"
 pytest-asyncio = "*"
 twine = "*"
 auto-changelog = "*"
 black = {version = "*", allow-prereleases = true}
+isort = "*"
 pre-commit = "*"
 bandit = "*"
 flake8 = "*"

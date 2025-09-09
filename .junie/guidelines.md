@@ -26,7 +26,7 @@ Use `chore:` if commit changes files outside ./lamina and ./tests.
 
 Use `BREAKING CHANGE:` if a python version changes in pyproject.toml.
 
-Use `ci:` if commit changes files only in ./github or the pyproject.toml.
+Use `ci:` if commit changes files only in ./.github or the pyproject.toml.
 
 Use `docs:` if commit changes files only in README.
 
