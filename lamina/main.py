@@ -5,11 +5,12 @@ import json
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Type, TypedDict, Union
 
+import magic
 from loguru import logger
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, RootModel, ValidationError
 
-from lamina.config import get_hooks
-from lamina.helpers import DecimalEncoder, Lamina
+from lamina import conf
+from lamina.helpers import DecimalEncoder
 
 
 @dataclass
@@ -35,9 +36,9 @@ class ResponseDict(TypedDict):
 
 
 def lamina(
-    schema_in: Optional[Type[BaseModel]] = None,
-    schema_out: Optional[Type[BaseModel]] = None,
-    content_type: Lamina = Lamina.JSON,
+    schema_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
+    schema_out: Optional[Type[BaseModel] | Type[RootModel]] = None,
+    content_type: str | None = None,
     step_functions: bool = False,
 ) -> Callable[[Callable[..., Any]], Callable[..., ResponseDict]]:
     def decorator(f: Callable[..., Any]) -> Callable[..., ResponseDict]:
@@ -57,18 +58,13 @@ def lamina(
             logger.info(f"******* {title.upper()} *******")
             logger.debug(event)
 
-            try:
-                # Load hooks
-                (
-                    pre_parse_hook,
-                    pre_execute_hook,
-                    pos_execute_hook,
-                    pre_response_hook,
-                ) = get_hooks()
+            magic_content_type = "application/json"
 
+            try:
                 # Run pre-parse hook (may adjust event)
+                pre_parse_hook = conf.LAMINA_PRE_PARSE_CALLBACK
                 if inspect.iscoroutinefunction(pre_parse_hook):
-                    event = asyncio.run(pre_parse_hook(event, context))  # type: ignore[misc]
+                    event = asyncio.run(pre_parse_hook(event, context))
                 else:
                     event = pre_parse_hook(event, context)
 
@@ -93,14 +89,16 @@ def lamina(
                     event=event,
                     context=context,
                 )
+                pre_execute_hook = conf.LAMINA_PRE_EXECUTE_CALLBACK
                 if inspect.iscoroutinefunction(pre_execute_hook):
-                    request = asyncio.run(pre_execute_hook(request, event, context))  # type: ignore[misc]
+                    request = asyncio.run(pre_execute_hook(request, event, context))
                 else:
                     request = pre_execute_hook(request, event, context)
 
                 status_code = 200
 
                 headers: Dict[str, str] = {}
+
                 # check if function is a coroutine
                 if inspect.iscoroutinefunction(f):
                     response: Any = asyncio.run(f(request))
@@ -108,8 +106,9 @@ def lamina(
                     response = f(request)
 
                 # Execute post-execution hook on raw response (before schema_out)
+                pos_execute_hook = conf.LAMINA_POS_EXECUTE_CALLBACK
                 if inspect.iscoroutinefunction(pos_execute_hook):
-                    response = asyncio.run(pos_execute_hook(response, request))  # type: ignore[misc]
+                    response = asyncio.run(pos_execute_hook(response, request))
                 else:
                     response = pos_execute_hook(response, request)
 
@@ -121,11 +120,23 @@ def lamina(
 
                 try:
                     body: str | Any = response
-                    if content_type == Lamina.JSON:
-                        if schema_out is None:
-                            body = json.dumps(response, cls=DecimalEncoder)
+                    if body:
+                        if schema_out:
+                            if issubclass(schema_out, RootModel):
+                                body = schema_out(response).root if body else None
+
+                            else:
+                                body = schema_out(**response).model_dump_json(
+                                    by_alias=True
+                                )
                         else:
-                            body = schema_out(**response).model_dump_json(by_alias=True)
+                            if isinstance(body, bytes):
+                                body = body.decode("utf-8")
+                            elif not isinstance(body, str):
+                                body = json.dumps(body, cls=DecimalEncoder)
+                    magic_content_type = (
+                        magic.from_buffer(body, mime=True) if body else "text/html"
+                    )
                 except Exception as e:
                     # This is an Internal Server Error
                     logger.error(f"Error when attempt to serialize response: {e}")
@@ -143,12 +154,14 @@ def lamina(
                     )
 
                 full_headers: Dict[str, str] = {
-                    "Content-Type": content_type.value,
+                    "Content-Type": content_type
+                    or f"{magic_content_type}; charset=utf-8",
                 }
                 if headers:
                     full_headers.update(headers)
 
                 # Run pre-response hook just before returning
+                pre_response_hook = conf.LAMINA_PRE_RESPONSE_CALLBACK
                 if inspect.iscoroutinefunction(pre_response_hook):
                     body = asyncio.run(pre_response_hook(body))  # type: ignore[misc]
                 else:
@@ -171,37 +184,27 @@ def lamina(
                 ]
                 logger.error(messages)
                 body = json.dumps(messages)
-                if inspect.iscoroutinefunction(pre_response_hook):
-                    body = asyncio.run(pre_response_hook(body))  # type: ignore[misc]
-                else:
-                    body = pre_response_hook(body)
-                return {
-                    "statusCode": 400,
-                    "body": body,
-                    "content-type": content_type.value,
-                }  # type: ignore[return-value]
-            except (ValueError, TypeError) as e:
-                message = f"Error when attempt to read received event: {event}."
-                logger.error(str(e))
-                body = json.dumps(message)
-                if inspect.iscoroutinefunction(pre_response_hook):
-                    body = asyncio.run(pre_response_hook(body))  # type: ignore[misc]
-                else:
-                    body = pre_response_hook(body)
                 return {
                     "statusCode": 400,
                     "body": body,
                     "headers": {
-                        "Content-Type": content_type.value,
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                }
+            except (ValueError, TypeError) as e:
+                message = f"Error when attempt to read received event: {event}."
+                logger.error(str(e))
+                body = json.dumps(message)
+                return {
+                    "statusCode": 400,
+                    "body": body,
+                    "headers": {
+                        "Content-Type": "application/json; charset=utf-8",
                     },
                 }
             except Exception as e:
                 logger.exception(e)
                 body = json.dumps({"error_message": str(e)})
-                if inspect.iscoroutinefunction(pre_response_hook):
-                    body = asyncio.run(pre_response_hook(body))  # type: ignore[misc]
-                else:
-                    body = pre_response_hook(body)
                 return {
                     "statusCode": 500,
                     "body": body,

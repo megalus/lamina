@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Optional, Union
 
-
 # Helper hooks used by unit tests. They are referenced via environment variables
 # so that lamina.config.get_hooks() imports them by string paths.
 

@@ -32,7 +32,8 @@ def pre_execute(
 def pos_execute(response: Any, request: Any) -> Any:
     """Default no-op post-execute hook.
 
-    Called with the handler raw response and the Request, before output schema serialization.
+    Called with the handler raw response and the Request,
+    before output schema serialization.
     Should return the (possibly modified) response.
     """
 
@@ -42,7 +43,8 @@ def pos_execute(response: Any, request: Any) -> Any:
 def pre_response(body: Any) -> Any:
     """Default no-op pre-response hook.
 
-    Called with the response body at the end of try/except block, just before returning.
+    Called with the response body at the end
+    of try/except block, just before returning.
     Should return the (possibly modified) body.
     """
 

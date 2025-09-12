@@ -1,10 +1,9 @@
 from lamina import Request, lamina
-from lamina.helpers import Lamina
 
 
 def test_403_response():
     # Arrange
-    @lamina(content_type=Lamina.HTML)
+    @lamina()
     def handler(request: Request):
         return (
             None,

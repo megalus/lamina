@@ -4,7 +4,6 @@ from typing import Any, Dict
 import pytest
 
 from lamina import Request, lamina
-from lamina.helpers import Lamina as LaminaCT
 
 
 @pytest.fixture(autouse=True)
@@ -24,7 +23,9 @@ def _event_with_body(body: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def test_pre_parse_modifies_event(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LAMINA_PRE_PARSE", "tests.custom_hooks:pre_parse_modify")
+    monkeypatch.setenv(
+        "LAMINA_PRE_PARSE_CALLBACK", "tests.custom_hooks:pre_parse_modify"
+    )
 
     @lamina()
     def handler(request: Request):
@@ -39,7 +40,9 @@ def test_pre_parse_modifies_event(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_pre_execute_adjusts_request(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LAMINA_PRE_EXECUTE", "tests.custom_hooks:pre_execute_adjust")
+    monkeypatch.setenv(
+        "LAMINA_PRE_EXECUTE_CALLBACK", "tests.custom_hooks:pre_execute_adjust"
+    )
 
     @lamina()
     def handler(request: Request):
@@ -52,7 +55,9 @@ def test_pre_execute_adjusts_request(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_pos_execute_can_return_tuple(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LAMINA_POS_EXECUTE", "tests.custom_hooks:pos_execute_tuple")
+    monkeypatch.setenv(
+        "LAMINA_POS_EXECUTE_CALLBACK", "tests.custom_hooks:pos_execute_tuple"
+    )
 
     @lamina()
     def handler(request: Request):
@@ -67,9 +72,11 @@ def test_pos_execute_can_return_tuple(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_pre_response_mutates_body(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LAMINA_PRE_RESPONSE", "tests.custom_hooks:pre_response_add_key")
+    monkeypatch.setenv(
+        "LAMINA_PRE_RESPONSE_CALLBACK", "tests.custom_hooks:pre_response_add_key"
+    )
 
-    @lamina(content_type=LaminaCT.JSON)
+    @lamina()
     def handler(request: Request):
         return {"hello": "world"}
 
@@ -80,9 +87,8 @@ def test_pre_response_mutates_body(monkeypatch: pytest.MonkeyPatch) -> None:
     assert response["headers"]["Content-Type"] == "application/json; charset=utf-8"
 
 
-def test_invalid_env_path_falls_back(monkeypatch: pytest.MonkeyPatch) -> None:
-    # Set an invalid function path; code should fall back to default (no-op) and not crash
-    monkeypatch.setenv("LAMINA_PRE_PARSE", "does.not.exist:func")
+def test_invalid_hook_shows_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LAMINA_PRE_PARSE_CALLBACK", "does.not.exist:func")
 
     @lamina()
     def handler(request: Request):
@@ -91,5 +97,8 @@ def test_invalid_env_path_falls_back(monkeypatch: pytest.MonkeyPatch) -> None:
     response = handler(_event_with_body({"x": 1}), None)
     body = json.loads(response["body"])
 
-    assert body == {"x": 1}
-    assert response["statusCode"] == 200
+    assert body == {
+        "error_message": "Could not import 'does.not.exist:func' for setting "
+        "'LAMINA_PRE_PARSE_CALLBACK'"
+    }
+    assert response["statusCode"] == 500
