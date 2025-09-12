@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v5.0.0 (2025-09-12)
+
+### Breaking
+
+* feat!: v.5.0 - BREAKING CHANGE
+
+* Autodetect MIME type. Use `content_type` parameter to override.
+* Add support to RootModel
+* Refactor hooks logic ([`d279206`](https://github.com/megalus/lamina/commit/d2792069f332dbb46347693b165f10e13d50b504))
+
+
 ## v4.0.0 (2025-09-09)
 
 ### Breaking
