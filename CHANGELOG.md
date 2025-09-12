@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v5.0.1 (2025-09-12)
+
+### Fixes
+
+* fix: content type and dumping ([`06ac49b`](https://github.com/megalus/lamina/commit/06ac49be6d8fb7640be7582d7047fb655a0c4d59))
+
+
 ## v5.0.0 (2025-09-12)
 
 ### Breaking
