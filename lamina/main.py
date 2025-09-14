@@ -125,13 +125,25 @@ def lamina(
                             if issubclass(schema_out, RootModel):
                                 root = schema_out(response).root
                                 if root is not None:
-                                    body = schema_out(response).model_dump_json(by_alias=True) if not isinstance(root, str) else root
+                                    body = (
+                                        schema_out(response).model_dump_json(
+                                            by_alias=True
+                                        )
+                                        if not isinstance(root, str)
+                                        else root
+                                    )
                             else:
                                 body = schema_out(**response).model_dump_json(
                                     by_alias=True
                                 )
-                        body = json.dumps(body, cls=DecimalEncoder) if not isinstance(body,str) else body
-                    magic_content_type = magic.from_buffer(body, mime=True) if body else "text/html"
+                        body = (
+                            json.dumps(body, cls=DecimalEncoder)
+                            if not isinstance(body, str)
+                            else body
+                        )
+                    magic_content_type = (
+                        magic.from_buffer(body, mime=True) if body else "text/html"
+                    )
                 except Exception as e:
                     # This is an Internal Server Error
                     logger.error(f"Error when attempt to serialize response: {e}")
