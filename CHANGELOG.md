@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v5.0.2 (2025-09-14)
+
+### Fixes
+
+* fix: missing schemas to wrapper ([`71c8f88`](https://github.com/megalus/lamina/commit/71c8f8872590abc130ed9469208eccfefe31523e))
+
+
 ## v5.0.1 (2025-09-12)
 
 ### Fixes
