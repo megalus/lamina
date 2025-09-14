@@ -208,6 +208,10 @@ def lamina(
                     },
                 }
 
+        wrapper.schema_in = schema_in
+        wrapper.schema_out = schema_out
+        wrapper.content_type = content_type
+
         return wrapper
 
     return decorator
