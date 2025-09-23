@@ -12,6 +12,9 @@ from pydantic import BaseModel, RootModel, ValidationError
 from lamina import conf
 from lamina.helpers import DecimalEncoder
 
+# Global registry of lamina-decorated handlers (wrappers)
+LAMINA_REGISTRY: list[Callable[..., Any]] = []
+
 
 @dataclass
 class Request:
@@ -21,12 +24,14 @@ class Request:
         data: Parsed body or model instance according to schema_in and flags.
         event: Original AWS Lambda event.
         context: Lambda context object.
+        query: Optional parsed query parameters if params_in schema is provided.
     """
 
     data: Union[BaseModel, str]
     event: Union[Dict[str, Any], bytes, str]
     context: Optional[Dict[str, Any]]
-    pre_execute_result: Optional[Any] = None
+    headers: Optional[Dict[str, Any]]
+    query: Optional[BaseModel] = None
 
 
 class ResponseDict(TypedDict):
@@ -38,8 +43,13 @@ class ResponseDict(TypedDict):
 def lamina(
     schema_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
     schema_out: Optional[Type[BaseModel] | Type[RootModel]] = None,
+    params_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
     content_type: str | None = None,
     step_functions: bool = False,
+    path: Optional[str] = None,
+    responses: Optional[Dict[int, Dict[str, Any]]] = None,
+    add_to_spec: bool = True,
+    methods: Optional[list[str]] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., ResponseDict]]:
     def decorator(f: Callable[..., Any]) -> Callable[..., ResponseDict]:
         @functools.wraps(f)
@@ -68,6 +78,21 @@ def lamina(
                 else:
                     event = pre_parse_hook(event, context)
 
+                # Parse Headers
+                headers = event.get("headers", {}) if isinstance(event, dict) else {}
+                if headers is None:
+                    headers = {}
+
+                # Parse Params if schema provided
+                query_info = None
+                if params_in:
+                    query_data = (
+                        event.get("queryStringParameters", {})
+                        if isinstance(event, dict)
+                        else {}
+                    )
+                    query_info = params_in(**query_data)
+
                 # Parse input (after possible pre-parse modification)
                 if schema_in is None:
                     data = (
@@ -88,6 +113,8 @@ def lamina(
                     data=data,
                     event=event,
                     context=context,
+                    query=query_info,
+                    headers=headers,
                 )
                 pre_execute_hook = conf.LAMINA_PRE_EXECUTE_CALLBACK
                 if inspect.iscoroutinefunction(pre_execute_hook):
@@ -223,6 +250,32 @@ def lamina(
         wrapper.schema_in = schema_in
         wrapper.schema_out = schema_out
         wrapper.content_type = content_type
+        wrapper.params_in = params_in
+
+        # Resolve path (decorator argument > default from function name)
+        resolved_path = path
+        if not resolved_path:
+            # Convert function name snake_case to kebab-case
+            name_part = f.__name__.replace("_", "-").lower()
+            resolved_path = f"/{name_part}"
+        elif not resolved_path.startswith("/"):
+            resolved_path = f"/{resolved_path}"
+        wrapper.path = resolved_path  # type: ignore[attr-defined]
+
+        # Custom additional responses (e.g., {404: {"schema": ErrorOut}})
+        wrapper.responses = responses or {}  # type: ignore[attr-defined]
+
+        # Accepted HTTP methods for the handler (used by OpenAPI generator)
+        # Keep as provided (None means generator may fallback to extras or defaults)
+        wrapper.methods = methods  # type: ignore[attr-defined]
+
+        # Register wrapper for OpenAPI generation
+        if add_to_spec:
+            try:
+                LAMINA_REGISTRY.append(wrapper)
+            except Exception:
+                # Fallback: do not break if registry fails for some reason
+                logger.debug("Unable to register lamina wrapper in registry.")
 
         return wrapper
 

@@ -45,6 +45,10 @@ def test_async_lambda():
 
 def test_get_schemas():
     # Arrange
+    class ParamsIn(BaseModel):
+        id: int
+        flag: bool
+
     class SchemaIn(BaseModel):
         foo: str
         bar: int
@@ -53,7 +57,12 @@ def test_get_schemas():
         result: str
 
     # Act
-    @lamina(schema_in=SchemaIn, schema_out=SchemaOut, content_type="application/json")
+    @lamina(
+        params_in=ParamsIn,
+        schema_in=SchemaIn,
+        schema_out=SchemaOut,
+        content_type="application/json",
+    )
     async def handler(request: Request):
         await asyncio.sleep(0.1)
         return json.loads(request.data)
@@ -61,4 +70,5 @@ def test_get_schemas():
     # Assert
     assert handler.schema_in == SchemaIn
     assert handler.schema_out == SchemaOut
+    assert handler.params_in == ParamsIn
     assert handler.content_type == "application/json"

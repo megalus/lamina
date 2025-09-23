@@ -71,13 +71,35 @@ Create your AWS Lambda handler:
 # main.py
 from typing import Any, Dict
 from lamina import lamina, Request
-from .schemas import ExampleInput, ExampleOutput
 
 @lamina(schema_in=ExampleInput, schema_out=ExampleOutput)
 def handler(request: Request) -> Dict[str, Any]:
     response = {"message": f"Hello {request.data.name}, you are {request.data.age} years old!"}
     return response
 ```
+
+#### Working with query parameters
+
+You can also define Pydantic models for query parameters:
+
+```python
+# schemas.py
+from pydantic import BaseModel
+from typing import Any, Dict, Optional
+from lamina import lamina, Request
+
+class ExampleQueryParams(BaseModel):
+    verbose: Optional[bool] = False
+
+@lamina(params_in=ExampleQueryParams, schema_in=ExampleInput, schema_out=ExampleOutput)
+def handler(request: Request) -> Dict[str, Any]:
+    if request.query.verbose:
+        response = {"message": f"Hello {request.data.name}, you are {request.data.age} years old!."}
+    else:
+        response = {"message": f"Hello World!"}
+    return response
+```
+
 
 ### Asynchronous Handlers
 
@@ -88,7 +110,6 @@ Lamina seamlessly supports both synchronous and asynchronous handlers:
 import asyncio
 from typing import Any, Dict
 from lamina import lamina, Request
-from .schemas import ExampleInput, ExampleOutput
 
 @lamina(schema_in=ExampleInput, schema_out=ExampleOutput)
 async def handler(request: Request) -> Dict[str, Any]:
@@ -105,6 +126,9 @@ async def handler(request: Request) -> Dict[str, Any]:
 The default status code is 200. You can customize it by returning a tuple:
 
 ```python
+from typing import Any, Dict
+from lamina import lamina, Request
+
 @lamina(schema_in=ExampleInput, schema_out=ExampleOutput)
 def handler(request: Request):
     response = {"message": f"Hello {request.data.name}, you are {request.data.age} years old!"}
@@ -187,6 +211,8 @@ The `Request` object provides access to:
 - `data`: The validated input data (as a Pydantic model if schema_in is provided)
 - `event`: The original AWS Lambda event
 - `context`: The original AWS Lambda context
+- `query`: Query parameters from the event (as a Pydantic model if params_in is provided)
+- `headers`: Headers from the AWS Lambda event
 
 ### Using Without Schemas
 
@@ -265,3 +291,124 @@ poetry run pre-commit run --all
 ## License
 
 This project is licensed under the terms of the MIT license.
+
+
+## OpenAPI (Swagger) 3.1 Generation
+
+Lamina can generate an OpenAPI 3.1 document by inspecting your decorated handlers and the metadata you place inside your Pydantic models using `json_schema_extra`.
+
+### How it works:
+- You can  pass the path directly in the decorator: `@lamina(path="/items" ...)`. If `path` is omitted, Lamina will derive it from the function name in kebab-case (e.g., `foo_bar` -> `/foo-bar`).
+- Custom responses can be declared in the decorator via `responses={404: {"schema": ErrorOut}}`.
+- All views automatically include `400` and `500` responses that reflect Lamina's built-in error handling.
+- Paths in the generated Swagger UI are listed in alphabetical order by path.
+- Authentication settings can be provided to `get_openapi_spec`. If not provided, the default is API Key in header `Authorization`.
+- You can pass accepted HTTP methods via the decorator: `@lamina(methods=["get", "post"])`. If omitted, the default is `POST` (API Gateway typical default). You can still indicate a method in `json_schema_extra` for backward compatibility.
+- Put operation metadata like `summary`, `description`, `tags`, and `operationId` in `json_schema_extra` of your `schema_in`, `schema_out`, or `params_in` models. If keys appear in multiple models, later ones override earlier ones.
+- Provide the `path` via the decorator (recommended). If not set, it falls back to model extras and finally to the function name as explained above.
+- Operation summary/description are derived from the handler docstring when present: the first line is used as summary and the following free-text (until Args/Returns/etc.) as description. If no docstring is present, the generator falls back to json_schema_extra values; if neither exists, the summary becomes the function name in title case (e.g., foo_bar -> Foo Bar) and the description is empty.
+- You can exclude a handler from the generated spec by setting `add_to_spec=False` in the decorator (useful for HTML endpoints or internal views).
+- Handlers without schemas (e.g., `@lamina()` with no `schema_in`/`schema_out`) are ignored by the spec generator unless sufficient metadata is available via models.
+- Call `get_openapi_spec(...)` to receive a Python dict ready to be dumped as JSON.
+
+Example:
+
+```python
+from typing import Any, Dict
+from pydantic import BaseModel, ConfigDict
+from lamina import lamina, Request, get_openapi_spec
+
+
+class CreateItemIn(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "method": "post",
+            "summary": "Create an item",
+            "tags": ["items"],
+        }
+    )
+    name: str
+
+
+class CreateItemOut(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"description": "Created item"})
+    id: int
+    name: str
+
+
+@lamina(path="/items", schema_in=CreateItemIn, schema_out=CreateItemOut)
+def create_item(request: Request) -> Dict[str, Any]:
+    return {"id": 1, "name": request.data.name}
+
+
+# Later (e.g., in a CLI or during startup)
+spec = get_openapi_spec(title="My API", version="1.0.0", host="api.example.com", base_path="/v1")
+
+# Dump as JSON
+import json
+print(json.dumps(spec, indent=2))
+```
+
+Custom responses and authentication:
+
+```python
+from pydantic import BaseModel
+
+class ErrorOut(BaseModel):
+    detail: str
+
+@lamina(path="/items/{id}", schema_in=CreateItemIn, responses={404: {"schema": ErrorOut}})
+def get_item(request: Request) -> Dict[str, Any]:
+    ...
+
+# Default auth is API Key via Authorization header
+spec_default_auth = get_openapi_spec(title="My API", version="1.0.0")
+
+# Custom bearer auth
+spec_bearer = get_openapi_spec(
+    title="My API",
+    version="1.0.0",
+    security_schemes={"BearerAuth": {"type": "http", "scheme": "bearer"}},
+    security=[{"BearerAuth": []}],
+)
+```
+
+The resulting document follows the OpenAPI 3.1 structure with:
+- `paths` determined by the decorator or model extras and sorted alphabetically.
+- `components.schemas` containing the Pydantic-generated JSON Schemas for your models.
+- Query parameters auto-generated from `params_in` models (basic types).
+- `400` and `500` responses automatically included for each operation. Add more with the `responses` argument on the decorator.
+
+Notes:
+- You can also pass a list of explicit server URLs using `servers=["https://api.example.com/v1"]` instead of `host`/`base_path`.
+- If `path` is not provided in the decorator, it falls back to model extras and then to the kebab-case function name.
+
+### Validate your OpenAPI document
+
+You can validate the generated OpenAPI 3.1 spec using the openapi-schema-validator library.
+
+Example:
+
+```python
+from pydantic import BaseModel, ConfigDict
+from lamina import lamina, Request, get_openapi_spec
+from openapi_schema_validator import validate as oas_validate, OAS31Validator
+
+class In(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"method": "post"})
+    name: str
+
+class Out(BaseModel):
+    ok: bool
+
+@lamina(path="/ping", schema_in=In, schema_out=Out)
+def ping(request: Request):
+    return {"ok": True}
+
+spec = get_openapi_spec(title="My API", version="1.0.0")
+
+# Raises an exception if invalid
+oas_validate(spec, cls=OAS31Validator)
+```
+
+This is the same approach used in our unit tests to ensure the generated spec conforms to the official OpenAPI 3.1 schema.
