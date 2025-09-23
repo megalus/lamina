@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v6.0.0 (2025-09-23)
+
+### Breaking
+
+* feat!: add OpenAPI specification generation and support for query parameters.
+
+This is a BREAKING CHANGE feature. ([`d6e0e7c`](https://github.com/megalus/lamina/commit/d6e0e7c14e0eb7689bca0a4492c737f2d6af322f))
+
+### Unknown
+
+* tests: add missing test ([`8b47d48`](https://github.com/megalus/lamina/commit/8b47d480c04b4420ce0320d037b88fb9398369df))
+
+
 ## v5.0.2 (2025-09-14)
 
 ### Fixes
