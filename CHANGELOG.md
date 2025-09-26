@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.0.1 (2025-09-26)
+
+### Fixes
+
+* fix: implement OpenAPI specification generation with enhanced decorator support ([`1a7300d`](https://github.com/megalus/lamina/commit/1a7300df6da32f71a3e6544546b557be6f1ab1a9))
+
+
 ## v6.0.0 (2025-09-23)
 
 ### Breaking
