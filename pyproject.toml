@@ -64,9 +64,11 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.11,<4"
 asgiref = "*"
+commonmark = "*"
 loguru = "*"
 pydantic = "*"
 python-magic = "*"
+case-converter = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"

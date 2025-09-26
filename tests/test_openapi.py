@@ -100,8 +100,18 @@ def test_field_level_attributes_in_schema():
     assert props["age"]["description"] == "The item age"
 
 
-def test_decorator_path_defaults_to_kebabcase():
+@pytest.mark.parametrize(
+    "use_module, expected",
+    [
+        ("package", "/tests"),
+        ("module", "/test-openapi"),
+        ("function", "/foo-bar"),
+    ],
+)
+def test_decorator_path_defaults_to_kebabcase(use_module, expected, monkeypatch):
     # Arrange
+    monkeypatch.setenv("LAMINA_USE_OBJECT_NAME", use_module)
+
     class Meta(BaseModel):
         model_config = ConfigDict(json_schema_extra={"method": "get"})
         x: int
@@ -115,7 +125,7 @@ def test_decorator_path_defaults_to_kebabcase():
     paths = list(spec["paths"].keys())
 
     # Assert
-    assert "/foo-bar" in paths
+    assert expected in paths
 
 
 def test_decorator_path_overrides_model_extra():
@@ -187,10 +197,9 @@ def test_paths_ordering_alphabetical():
 def test_authentication_default_and_custom():
     # Arrange
     class Meta(BaseModel):
-        model_config = ConfigDict(json_schema_extra={"method": "get"})
         x: int
 
-    @lamina(schema_in=Meta)
+    @lamina(schema_in=Meta, methods=["GET"])
     def any_handler(request: Request):
         return {"x": 1}
 
@@ -206,8 +215,6 @@ def test_authentication_default_and_custom():
 
     # Assert
     assert "securitySchemes" in comps
-    assert "ApiKeyAuth" in comps["securitySchemes"]
-    assert spec["security"] == [{"ApiKeyAuth": []}]
     assert "BearerAuth" in custom["components"]["securitySchemes"]
     assert custom["security"] == [{"BearerAuth": []}]
 
@@ -303,7 +310,6 @@ def test_methods_decorator_and_default_post():
 def test_docstring_summary_and_description_and_defaults():
     # Arrange
     class PingIn(BaseModel):
-        model_config = ConfigDict(json_schema_extra={})
         name: str
 
     class PingOut(BaseModel):
@@ -314,7 +320,8 @@ def test_docstring_summary_and_description_and_defaults():
     )  # ensure inclusion
     def do_ping(request: Request):
         """Ping endpoint
-        This endpoint pings the server and returns a simple OK payload.
+
+        This endpoint pings the *server* and returns a simple OK payload.
         It is used for health checks.
 
         Args:
@@ -336,5 +343,7 @@ def test_docstring_summary_and_description_and_defaults():
     # Assert
     assert op["summary"] == "Ping endpoint"
     assert "health checks" in op["description"]
-    assert op2["summary"] == "Foo Bar"
+    assert "<em>" in op["description"]
+    assert "Args:" not in op["description"]
+    assert op2["summary"] == "No Doc"
     assert op2["description"] == ""

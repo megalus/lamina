@@ -41,15 +41,16 @@ class ResponseDict(TypedDict):
 
 
 def lamina(
+    path: Optional[str] = None,
     schema_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
     schema_out: Optional[Type[BaseModel] | Type[RootModel]] = None,
     params_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
     content_type: str | None = None,
     step_functions: bool = False,
-    path: Optional[str] = None,
     responses: Optional[Dict[int, Dict[str, Any]]] = None,
     add_to_spec: bool = True,
     methods: Optional[list[str]] = None,
+    tags: Optional[list[str]] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., ResponseDict]]:
     def decorator(f: Callable[..., Any]) -> Callable[..., ResponseDict]:
         @functools.wraps(f)
@@ -251,23 +252,11 @@ def lamina(
         wrapper.schema_out = schema_out
         wrapper.content_type = content_type
         wrapper.params_in = params_in
-
-        # Resolve path (decorator argument > default from function name)
-        resolved_path = path
-        if not resolved_path:
-            # Convert function name snake_case to kebab-case
-            name_part = f.__name__.replace("_", "-").lower()
-            resolved_path = f"/{name_part}"
-        elif not resolved_path.startswith("/"):
-            resolved_path = f"/{resolved_path}"
-        wrapper.path = resolved_path  # type: ignore[attr-defined]
-
-        # Custom additional responses (e.g., {404: {"schema": ErrorOut}})
-        wrapper.responses = responses or {}  # type: ignore[attr-defined]
-
-        # Accepted HTTP methods for the handler (used by OpenAPI generator)
-        # Keep as provided (None means generator may fallback to extras or defaults)
-        wrapper.methods = methods  # type: ignore[attr-defined]
+        wrapper.path = path
+        wrapper.responses = responses or {}
+        wrapper.methods = methods
+        wrapper.tags = tags
+        wrapper.import_path = f"{f.__module__}.{f.__name__}"
 
         # Register wrapper for OpenAPI generation
         if add_to_spec:

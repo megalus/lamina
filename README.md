@@ -261,55 +261,60 @@ Lamina automatically handles common errors:
 
 All errors are logged using the loguru library for easier debugging.
 
-## Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Fork the repository** and clone it locally
-2. **Create a new branch** for your feature or bugfix
-3. **Make your changes** and add tests if applicable
-4. **Run the tests** to ensure they pass: `poetry run pytest`
-5. **Submit a pull request** with a clear description of your changes
-
-Please make sure your code follows the project's style guidelines by running:
-```shell
-poetry run pre-commit run --all
-```
-
-### Development Setup
-
-1. Clone the repository
-2. Install dependencies with Poetry:
-   ```shell
-   poetry install
-   ```
-3. Install pre-commit hooks:
-   ```shell
-   poetry run pre-commit install
-   ```
-
-## License
-
-This project is licensed under the terms of the MIT license.
-
-
 ## OpenAPI (Swagger) 3.1 Generation
 
-Lamina can generate an OpenAPI 3.1 document by inspecting your decorated handlers and the metadata you place inside your Pydantic models using `json_schema_extra`.
+Lamina can generate an OpenAPI 3.1 document by inspecting your decorated handlers and the metadata you place inside decorator or in your Pydantic models using `json_schema_extra`.
 
-### How it works:
-- You can  pass the path directly in the decorator: `@lamina(path="/items" ...)`. If `path` is omitted, Lamina will derive it from the function name in kebab-case (e.g., `foo_bar` -> `/foo-bar`).
-- Custom responses can be declared in the decorator via `responses={404: {"schema": ErrorOut}}`.
+### Define Path:
+- You can  pass the path directly in the decorator: `@lamina(path="/items" ...)`.
+- If `path` is omitted, Lamina will derive it from the function, method or package name in kebab-case (e.g., `foo_bar` -> `/foo-bar`).
+- To define which object to use for path derivation, set the environment variable `LAMINA_USE_OBJECT_NAME` to one of: `function`, `method`, or `package`. The default is `function`.
+- You can also define `use_object_name` in pyproject.toml under `[tool.lamina]`.
+
+### Define Methods:
+- You can pass accepted HTTP methods via the decorator: `@lamina(..., methods=["get", "post"])`.
+- If omitted, the default is `POST` (API Gateway typical default).
+
+### Define Models:
+- Use Pydantic models for `schema_in`, `schema_out`, and `params_in` in the decorator.
+
+### Define Responses:
 - All views automatically include `400` and `500` responses that reflect Lamina's built-in error handling.
-- Paths in the generated Swagger UI are listed in alphabetical order by path.
-- Authentication settings can be provided to `get_openapi_spec`. If not provided, the default is API Key in header `Authorization`.
-- You can pass accepted HTTP methods via the decorator: `@lamina(methods=["get", "post"])`. If omitted, the default is `POST` (API Gateway typical default). You can still indicate a method in `json_schema_extra` for backward compatibility.
-- Put operation metadata like `summary`, `description`, `tags`, and `operationId` in `json_schema_extra` of your `schema_in`, `schema_out`, or `params_in` models. If keys appear in multiple models, later ones override earlier ones.
-- Provide the `path` via the decorator (recommended). If not set, it falls back to model extras and finally to the function name as explained above.
-- Operation summary/description are derived from the handler docstring when present: the first line is used as summary and the following free-text (until Args/Returns/etc.) as description. If no docstring is present, the generator falls back to json_schema_extra values; if neither exists, the summary becomes the function name in title case (e.g., foo_bar -> Foo Bar) and the description is empty.
+- Default return code for the `schema_out` is `200`. You can change it defining `LAMINA_DEFAULT_SUCCESS_STATUS_CODE` or `default_success_status_code` in pyproject.toml, under `[tool.lamina]`.
+- Custom responses can be declared in Pydantic and added in the decorator via `responses={404: {"schema": ErrorOut}}`. These responses will override any existing status code.
+
+### Define Authentication:
+- Authentication settings can be provided to `get_openapi_spec`.
+- If not provided, the default is API Key in header `Authorization`. You can change this header name by setting `LAMINA_DEFAULT_AUTH_HEADER_NAME` or `default_auth_header_name` in pyproject.toml, under `[tool.lamina]`.
+
+### Define Summary, Description, and Tags:
+- Operation summary/description are derived from the handler docstring when present
+- The first line is used as summary
+- The following free-text (until Args/Returns/etc.) as description.
+- If no docstring is present, the generator falls back to json_schema_extra values; if neither exists, the summary becomes the function name in title case (e.g., foo_bar -> Foo Bar) and the description is empty.
+
+### Adding/Remove the Handler from the Spec:
 - You can exclude a handler from the generated spec by setting `add_to_spec=False` in the decorator (useful for HTML endpoints or internal views).
 - Handlers without schemas (e.g., `@lamina()` with no `schema_in`/`schema_out`) are ignored by the spec generator unless sufficient metadata is available via models.
-- Call `get_openapi_spec(...)` to receive a Python dict ready to be dumped as JSON.
+
+### Using json_schema_extra
+You can add OpenAPI metadata to your Pydantic models using the `json_schema_extra` config:
+```python
+from pydantic import BaseModel, ConfigDict
+class CreateItemIn(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "method": "post",  # HTTP method
+            "summary": "Create an item",  # Operation summary
+            "tags": ["items"],  # Tags for grouping
+        }
+    )
+    name: str
+```
+Preference order is environment variables > decorator > model extras > defaults.
+
+### Generating the OpenAPI Document
+Call `get_openapi_spec(...)` to receive a Python dict ready to be dumped as JSON.
 
 Example:
 
@@ -335,8 +340,12 @@ class CreateItemOut(BaseModel):
     id: int
     name: str
 
-
-@lamina(path="/items", schema_in=CreateItemIn, schema_out=CreateItemOut)
+# Default Values
+# * Path: /create-item from LAMINA_USE_OBJECT_NAME=function
+# * Method: POST
+# * Response Status Codes: 200, 400, 500
+# * Authentication: API Key in `Authorization` header
+@lamina(schema_in=CreateItemIn, schema_out=CreateItemOut)
 def create_item(request: Request) -> Dict[str, Any]:
     return {"id": 1, "name": request.data.name}
 
@@ -349,23 +358,48 @@ import json
 print(json.dumps(spec, indent=2))
 ```
 
-Custom responses and authentication:
+Example with custom settings:
 
 ```python
+import os
 from pydantic import BaseModel
+
+class ParamsIn(BaseModel):
+    paginate: bool
+    next_token: str | None
 
 class ErrorOut(BaseModel):
     detail: str
 
-@lamina(path="/items/{id}", schema_in=CreateItemIn, responses={404: {"schema": ErrorOut}})
-def get_item(request: Request) -> Dict[str, Any]:
-    ...
+production_only = os.getenv("ENVIROMENT") == "production"
 
-# Default auth is API Key via Authorization header
-spec_default_auth = get_openapi_spec(title="My API", version="1.0.0")
+@lamina(
+    path="/items/{id}",  # View Path
+    params_in=ParamsIn,
+    schema_in=CreateItemIn,
+    schema_out=CreateItemOut,
+    responses={503: {"schema": ErrorOut}},  # Extra responses
+    methods=["GET", "POST"],  # Methods
+    tags=["Item"],  # Tags
+    add_to_spec=production_only  # Add to OpenApi spec?
+)
+def get_item(request: Request) -> Dict[str, Any]:
+    """This is the Summary of the View in Swagger.
+
+    This is the _description_ of the view in Swagger.
+
+    * You can use **CommonMark** syntax here.
+    * Everything below Args/Returns is ignored.
+
+    Args:
+        request (Request): Lamina Request Object.
+    Returns:
+        Dict[str, Any]: A dictionary containing the item details.
+    """
+        return {"id": 1, "name": request.data.name}
 
 # Custom bearer auth
-spec_bearer = get_openapi_spec(
+spec = get_openapi_spec(
     title="My API",
     version="1.0.0",
     security_schemes={"BearerAuth": {"type": "http", "scheme": "bearer"}},
@@ -373,42 +407,33 @@ spec_bearer = get_openapi_spec(
 )
 ```
 
-The resulting document follows the OpenAPI 3.1 structure with:
-- `paths` determined by the decorator or model extras and sorted alphabetically.
-- `components.schemas` containing the Pydantic-generated JSON Schemas for your models.
-- Query parameters auto-generated from `params_in` models (basic types).
-- `400` and `500` responses automatically included for each operation. Add more with the `responses` argument on the decorator.
+## Contributing
 
-Notes:
-- You can also pass a list of explicit server URLs using `servers=["https://api.example.com/v1"]` instead of `host`/`base_path`.
-- If `path` is not provided in the decorator, it falls back to model extras and then to the kebab-case function name.
+Contributions are welcome! Here's how you can help:
 
-### Validate your OpenAPI document
+1. **Fork the repository** and clone it locally
+2. **Create a new branch** for your feature or bugfix
+3. **Make your changes** and add tests if applicable
+4. **Run the tests** to ensure they pass: `make test`
+5. **Submit a pull request** with a clear description of your changes
 
-You can validate the generated OpenAPI 3.1 spec using the openapi-schema-validator library.
-
-Example:
-
-```python
-from pydantic import BaseModel, ConfigDict
-from lamina import lamina, Request, get_openapi_spec
-from openapi_schema_validator import validate as oas_validate, OAS31Validator
-
-class In(BaseModel):
-    model_config = ConfigDict(json_schema_extra={"method": "post"})
-    name: str
-
-class Out(BaseModel):
-    ok: bool
-
-@lamina(path="/ping", schema_in=In, schema_out=Out)
-def ping(request: Request):
-    return {"ok": True}
-
-spec = get_openapi_spec(title="My API", version="1.0.0")
-
-# Raises an exception if invalid
-oas_validate(spec, cls=OAS31Validator)
+Please make sure your code follows the project's style guidelines by running:
+```shell
+poetry run make lint
 ```
 
-This is the same approach used in our unit tests to ensure the generated spec conforms to the official OpenAPI 3.1 schema.
+### Development Setup
+
+1. Clone the repository
+2. Install dependencies with Poetry:
+   ```shell
+   poetry install
+   ```
+3. Install pre-commit hooks:
+   ```shell
+   poetry run pre-commit install
+   ```
+
+## License
+
+This project is licensed under the terms of the MIT license.

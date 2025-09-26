@@ -15,8 +15,18 @@ def get_toml_configuration() -> Dict[str, Any]:
         A dictionary containing the contents of the pyproject.toml file.
         If the file does not exist or cannot be read, an empty dictionary is returned.
     """
+    current_dir = os.getcwd()
+    while True:
+        if os.path.isfile(os.path.join(current_dir, "pyproject.toml")):
+            break
+        parent_dir = os.path.dirname(current_dir)
+        if parent_dir == current_dir:  # Reached the root directory
+            return {}
+        current_dir = parent_dir
+
+    file_path = os.path.join(current_dir, "pyproject.toml")
     try:
-        with open("pyproject.toml", "rb") as f:
+        with open(file_path, "rb") as f:
             all_data = tomllib.load(f)
             return all_data.get("tool", {}).get("lamina", {})
     except (FileNotFoundError, tomllib.TOMLDecodeError):
@@ -35,17 +45,22 @@ class LaminaSettings:
             # Then check the settings dictionary
             value = self.settings.get(name, default)
 
-        module_path = (
-            ".".join(value.split(".")[:-1]) if ":" not in value else value.split(":")[0]
-        )
-        func_name = value.split(".")[-1] if ":" not in value else value.split(":")[1]
-        try:
-            module = importlib.import_module(module_path)
-            value = getattr(module, func_name)
-        except (ImportError, AttributeError) as error:
-            raise ImportError(
-                f"Could not import '{value}' for setting '{full_name}'"
-            ) from error
+        if "." in str(value) or ":" in str(value):
+            module_path = (
+                ".".join(value.split(".")[:-1])
+                if ":" not in value
+                else value.split(":")[0]
+            )
+            func_name = (
+                value.split(".")[-1] if ":" not in value else value.split(":")[1]
+            )
+            try:
+                module = importlib.import_module(module_path)
+                value = getattr(module, func_name)
+            except (ImportError, AttributeError) as error:
+                raise ImportError(
+                    f"Could not import '{value}' for setting '{full_name}'"
+                ) from error
 
         return value
 
@@ -70,6 +85,23 @@ class LaminaSettings:
         return self._get_setting(
             "pre_response_callback", default="lamina.hooks.pre_response"
         )
+
+    @property
+    def LAMINA_USE_OBJECT_NAME(self) -> str:
+        # Options are: package, module, function
+        return self._get_setting("use_object_name", "function")
+
+    @property
+    def LAMINA_DEFAULT_AUTH_HEADER_NAME(self) -> str:
+        return self._get_setting("default_auth_header_name", "Authorization")
+
+    @property
+    def LAMINA_API_URL(self) -> str | None:
+        return self._get_setting("api_url")
+
+    @property
+    def LAMINA_DEFAULT_SUCCESS_STATUS_CODE(self) -> int:
+        return int(self._get_setting("default_success_status_code", 200))
 
 
 # Create a single instance of the settings class
