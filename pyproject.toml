@@ -64,7 +64,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.11,<4"
 asgiref = "*"
-commonmark = "*"
+mistune = "*"
 loguru = "*"
 pydantic = "*"
 python-magic = "*"

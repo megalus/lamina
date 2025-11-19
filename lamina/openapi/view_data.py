@@ -1,12 +1,13 @@
+import datetime
 import inspect
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from caseconverter import camelcase, kebabcase, titlecase
-from commonmark import commonmark
 from pydantic import BaseModel, RootModel
 
 from lamina import conf
+from lamina.openapi.markdown import markdown_to_html
 from lamina.openapi.types import ParameterObject
 
 
@@ -38,6 +39,9 @@ class ViewData:
     extra_responses: Dict[int, Any] = None
     view_docstring: Optional[str] = None
     tags: Optional[List[str]] = None
+    file_last_update: Optional[datetime] = None
+    accept_media_type: str | None = None
+    produce_media_type: str | None = None
 
     def extract_extras(self) -> Dict[str, Any]:
         """Merge json_schema_extra from provided models."""
@@ -134,7 +138,10 @@ class ViewData:
             if ln.strip().lower() in stop_tokens:
                 break
             desc_lines.append(ln)
-        description = commonmark("\n".join(desc_lines).strip())
+
+        description = markdown_to_html(
+            "\n".join(desc_lines).strip(), self.file_last_update
+        )
         return summary, description
 
     def get_summary(self):
@@ -193,16 +200,15 @@ class ViewData:
                 elif annotation is bool:
                     t = "boolean"
 
-                required = name in (
-                    self.params.model_json_schema().get("required") or []
-                )
+                required_fields = self.params.model_json_schema().get("required") or []
+                is_required = name in required_fields or field.alias in required_fields
                 desc = field.description or ""
                 params.append(
                     ParameterObject(
                         **{
-                            "name": name,
+                            "name": field.alias or name,
                             "in": "query",
-                            "required": bool(required),
+                            "required": is_required,
                             "schema": {"type": t},
                             "description": desc,
                         }

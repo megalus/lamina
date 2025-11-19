@@ -35,7 +35,7 @@ def test_html_response():
 
 def test_force_content_type():
     # Arrange
-    @lamina(content_type="text/plain")
+    @lamina(produces="text/plain")
     def handler(request: Request):
         return "<html><h1>hello world</h1></html>"
 

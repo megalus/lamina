@@ -96,6 +96,10 @@ class LaminaSettings:
         return self._get_setting("default_auth_header_name", "Authorization")
 
     @property
+    def LAMINA_DEFAULT_ERROR_KEY(self) -> str:
+        return self._get_setting("default_error_key", "detail")
+
+    @property
     def LAMINA_API_URL(self) -> str | None:
         return self._get_setting("api_url")
 

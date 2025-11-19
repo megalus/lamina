@@ -388,7 +388,8 @@ def get_item(request: Request) -> Dict[str, Any]:
 
     This is the _description_ of the view in Swagger.
 
-    * You can use **CommonMark** syntax here.
+    * You can use GitHub Flavored Markdown (GFM) here, including tables and strikethrough.
+    * Mermaid diagrams are supported in the docs, but are omitted from OpenAPI descriptions.
     * Everything below Args/Returns is ignored.
 
     Args:

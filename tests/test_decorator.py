@@ -61,7 +61,7 @@ def test_get_schemas():
         params_in=ParamsIn,
         schema_in=SchemaIn,
         schema_out=SchemaOut,
-        content_type="application/json",
+        produces="application/json",
     )
     async def handler(request: Request):
         await asyncio.sleep(0.1)
@@ -71,4 +71,4 @@ def test_get_schemas():
     assert handler.schema_in == SchemaIn
     assert handler.schema_out == SchemaOut
     assert handler.params_in == ParamsIn
-    assert handler.content_type == "application/json"
+    assert handler.response_content_type == "application/json"

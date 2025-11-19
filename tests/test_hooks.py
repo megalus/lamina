@@ -98,7 +98,7 @@ def test_invalid_hook_shows_error(monkeypatch: pytest.MonkeyPatch) -> None:
     body = json.loads(response["body"])
 
     assert body == {
-        "error_message": "Could not import 'does.not.exist:func' for setting "
+        "detail": "Could not import 'does.not.exist:func' for setting "
         "'LAMINA_PRE_PARSE_CALLBACK'"
     }
     assert response["statusCode"] == 500

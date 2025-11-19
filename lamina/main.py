@@ -2,8 +2,19 @@ import asyncio
 import functools
 import inspect
 import json
+import os
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Type, TypedDict, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Optional,
+    Type,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 import magic
 from loguru import logger
@@ -15,9 +26,11 @@ from lamina.helpers import DecimalEncoder
 # Global registry of lamina-decorated handlers (wrappers)
 LAMINA_REGISTRY: list[Callable[..., Any]] = []
 
+SchemaType = TypeVar("SchemaType", bound=BaseModel | RootModel)
+
 
 @dataclass
-class Request:
+class Request(Generic[SchemaType]):
     """Request object passed to decorated handlers.
 
     Attributes:
@@ -27,7 +40,7 @@ class Request:
         query: Optional parsed query parameters if params_in schema is provided.
     """
 
-    data: Union[BaseModel, str]
+    data: Union[SchemaType, str]
     event: Union[Dict[str, Any], bytes, str]
     context: Optional[Dict[str, Any]]
     headers: Optional[Dict[str, Any]]
@@ -42,10 +55,11 @@ class ResponseDict(TypedDict):
 
 def lamina(
     path: Optional[str] = None,
-    schema_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
+    schema_in: Optional[Type[SchemaType]] = None,
     schema_out: Optional[Type[BaseModel] | Type[RootModel]] = None,
     params_in: Optional[Type[BaseModel] | Type[RootModel]] = None,
-    content_type: str | None = None,
+    accepts: str = "application/json; charset=utf-8",
+    produces: str | None = None,
     step_functions: bool = False,
     responses: Optional[Dict[int, Dict[str, Any]]] = None,
     add_to_spec: bool = True,
@@ -67,7 +81,6 @@ def lamina(
                 path = event.get("path") if isinstance(event, dict) else "unknown"
                 title = f"{f.__name__} for path {path}"
             logger.info(f"******* {title.upper()} *******")
-            logger.debug(event)
 
             magic_content_type = "application/json"
 
@@ -102,12 +115,44 @@ def lamina(
                         else event
                     )
                 else:
-                    request_body = (
-                        json.loads(event["body"])
-                        if (isinstance(event, dict) and not step_functions)
-                        else event
+                    # First check if is Base64 encoded
+                    is_base64 = (
+                        event.get("isBase64Encoded", False)
+                        if isinstance(event, dict)
+                        else False
                     )
-                    data = schema_in(**request_body)
+                    if is_base64:
+                        logger.debug(
+                            f"Body received is base64 encoded, "
+                            f"passing raw and run {schema_in.__name__}..."
+                        )
+                        decoded_body = (
+                            event["body"]
+                            if (isinstance(event, dict) and not step_functions)
+                            else event
+                        )
+                        data = schema_in(decoded_body)
+                    else:
+                        try:
+                            # Try to parse body as JSON first
+                            request_body = (
+                                json.loads(event["body"])
+                                if (isinstance(event, dict) and not step_functions)
+                                else event
+                            )
+                            logger.debug(
+                                f"Body received is JSON, "
+                                f"parsing and run {schema_in.__name__}..."
+                            )
+                            data = schema_in(**request_body)
+                        except (json.JSONDecodeError, TypeError):
+                            # Fallback: pass raw body to schema
+                            logger.debug(
+                                f"Body received is not JSON, "
+                                f"passing raw and run {schema_in.__name__}..."
+                            )
+                            request_body = event
+                            data = schema_in(request_body)
 
                 # Build initial Request and run pre-execute hook
                 request = Request(
@@ -189,8 +234,7 @@ def lamina(
                     )
 
                 full_headers: Dict[str, str] = {
-                    "Content-Type": content_type
-                    or f"{magic_content_type}; charset=utf-8",
+                    "Content-Type": produces or f"{magic_content_type}; charset=utf-8",
                 }
                 if headers:
                     full_headers.update(headers)
@@ -218,18 +262,19 @@ def lamina(
                     for error in e.errors()
                 ]
                 logger.error(messages)
-                body = json.dumps(messages)
+                body = json.dumps({conf.LAMINA_DEFAULT_ERROR_KEY: messages})
                 return {
-                    "statusCode": 400,
+                    "statusCode": 422,
                     "body": body,
                     "headers": {
                         "Content-Type": "application/json; charset=utf-8",
                     },
                 }
             except (ValueError, TypeError) as e:
-                message = f"Error when attempt to read received event: {event}."
+                message = f"Error when attempt to read received event: {e}."
                 logger.error(str(e))
-                body = json.dumps(message)
+                logger.exception(e)
+                body = json.dumps({conf.LAMINA_DEFAULT_ERROR_KEY: message})
                 return {
                     "statusCode": 400,
                     "body": body,
@@ -239,7 +284,7 @@ def lamina(
                 }
             except Exception as e:
                 logger.exception(e)
-                body = json.dumps({"error_message": str(e)})
+                body = json.dumps({conf.LAMINA_DEFAULT_ERROR_KEY: str(e)})
                 return {
                     "statusCode": 500,
                     "body": body,
@@ -248,9 +293,19 @@ def lamina(
                     },
                 }
 
+        # We need to find the python file which contains the decorated function
+        # and get the last update time to include in the description.
+        fn_file = inspect.getfile(f)
+        try:
+            last_updated = os.path.getmtime(fn_file)
+            wrapper.last_updated = last_updated
+        except Exception:
+            wrapper.last_updated = None
+
         wrapper.schema_in = schema_in
         wrapper.schema_out = schema_out
-        wrapper.content_type = content_type
+        wrapper.request_content_type = accepts
+        wrapper.response_content_type = produces
         wrapper.params_in = params_in
         wrapper.path = path
         wrapper.responses = responses or {}

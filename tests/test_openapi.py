@@ -1,8 +1,11 @@
+import datetime
+import os
+from textwrap import dedent
 from typing import Any, Dict
 
 import pytest
 from openapi_spec_validator import validate
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 import lamina.main as lamina_main
 from lamina import Request, get_openapi_spec, lamina
@@ -56,7 +59,11 @@ def test_get_openapi_minimal():
     # Request body is present
     assert "requestBody" in post_op
     content = post_op["requestBody"]["content"]
-    assert "application/json" in content
+    assert content == {
+        "application/json; charset=utf-8": {
+            "schema": {"$ref": "#/components/schemas/ItemIn"}
+        }
+    }
 
     # Response
     assert "200" in post_op["responses"]
@@ -347,3 +354,171 @@ def test_docstring_summary_and_description_and_defaults():
     assert "Args:" not in op["description"]
     assert op2["summary"] == "No Doc"
     assert op2["description"] == ""
+
+
+mod_time = os.path.getmtime(__file__)
+last_updated = datetime.datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d %H:%M:%S")
+
+expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
+<p>This is a <strong>bold</strong> statement.</p>
+<p>This is an <em>italic</em> word.</p>
+<p>This is a <code>code snippet</code>.</p>
+<p>This is a <em><strong>bold-italic</strong></em></p>
+<p>And this is <del>strikethrough</del> text.</p>
+<p>Finally, this is a block of code:</p>
+<pre><code class="language-python">def hello_world():
+    print(&quot;Hello, World!&quot;)
+</code></pre>
+<h2>This is the lists</h2>
+<h3>This is a bullet list:</h3>
+<ul>
+<li>Item 1</li>
+<li>Item 2</li>
+<li>Item 3</li>
+</ul>
+<h3>And this is a numbered list:</h3>
+<ol>
+<li>First</li>
+<li>Second</li>
+<li>Third</li>
+<li>Fourth</li>
+</ol>
+<h3>Links</h3>
+<p>Here is a <a href="https://example.com">link</a> to an example website.</p>
+<h3>Tables</h3>
+<table>
+<thead>
+<tr>
+  <th>Header 1</th>
+  <th>Header 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Cell 1</td>
+  <td>Cell 2</td>
+</tr>
+<tr>
+  <td>Cell 3</td>
+  <td>Cell 4</td>
+</tr>
+</tbody>
+</table>
+<h3>Mermaid Diagram</h3>
+<pre><code class="language-mermaid">graph TD;
+    A--&gt;B;
+    A--&gt;C;
+    B--&gt;D;
+    C--&gt;D;
+</code></pre>
+<hr><p><em>Document Last Updated: {last_updated}</em></p>"""
+
+
+def test_markdown_to_html_in_descriptions():
+    # Arrange
+    class InModel(BaseModel):
+        x: int
+
+    @lamina(path="/convert", schema_in=InModel)
+    def markdown_handler(request: Request):
+        """Test Markdown Conversion.
+
+        ### Paragraphs and Text Formatting
+        This is a **bold** statement.
+
+        This is an _italic_ word.
+
+        This is a `code snippet`.
+
+        This is a _**bold-italic**_
+
+        And this is ~~strikethrough~~ text.
+
+        Finally, this is a block of code:
+        ```python
+        def hello_world():
+            print("Hello, World!")
+        ```
+
+        ## This is the lists
+        ### This is a bullet list:
+        - Item 1
+        - Item 2
+        - Item 3
+
+        ### And this is a numbered list:
+        1. First
+        2. Second
+        3. Third
+        4. Fourth
+
+        ### Links
+        Here is a [link](https://example.com) to an example website.
+
+        ### Tables
+        | Header 1 | Header 2 |
+        |----------|----------|
+        | Cell 1   | Cell 2   |
+        | Cell 3   | Cell 4   |
+
+        ### Mermaid Diagram
+        ```mermaid
+        graph TD;
+            A-->B;
+            A-->C;
+            B-->D;
+            C-->D;
+        ```
+
+        """
+        return {"x": 1}
+
+    # Act
+    spec = get_openapi_spec(title="Test", version="1.0.0")
+    desc = spec["paths"]["/convert"]["post"]["description"]
+
+    # Assert
+    assert dedent(desc) == dedent(expected_result)
+
+
+def test_custom_content_types():
+    """Check custom request and response content types are in the OpenAPI spec.
+
+    In this test, expected results in POST /custom are:
+    * Accepts: application/octet-stream
+    * Returns: text/plain
+
+    """
+
+    # Arrange
+    class InModel(RootModel[bytes]):
+        pass
+
+    class OutModel(RootModel[str]):
+        pass
+
+    @lamina(
+        path="/custom",
+        schema_in=InModel,
+        schema_out=OutModel,
+        accepts="application/octet-stream",
+        produces="text/plain",
+    )
+    def custom_content_handler(request: Request):
+        return "custom response"
+
+    # Act
+    spec = get_openapi_spec(title="Test", version="1.0.0")
+    op = spec["paths"]["/custom"]["post"]
+    request_content = op["requestBody"]["content"]
+    response_content = op["responses"]["200"]["content"]
+
+    # Assert
+    assert request_content == {
+        "application/octet-stream": {
+            "schema": {"$ref": "#/components/schemas/InModel"},
+        }
+    }
+    assert response_content == {
+        "text/plain": {"schema": {"$ref": "#/components/schemas/OutModel"}}
+    }

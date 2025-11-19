@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from commonmark import commonmark
-from pydantic import BaseModel, RootModel
+from pydantic import BaseModel, Field, RootModel
 
 from lamina import conf
+from lamina.openapi import ExtraResponsesDict
+from lamina.openapi.markdown import markdown_to_html
 from lamina.openapi.types import (
     ComponentsObject,
     OpenAPIContactObject,
@@ -13,11 +14,63 @@ from lamina.openapi.types import (
     OpenAPILicenseObject,
     OpenAPIObject,
     OpenAPIServerObject,
+    OpenAPITagsObject,
     OperationObject,
     RequestBodyObject,
     ResponseObject,
 )
 from lamina.openapi.view_data import ViewData, extract_schema_info
+
+
+class BadRequest400(BaseModel):
+    """Default 400 response schema for Lamina handlers."""
+
+    detail: str | List[Dict[str, str]] = Field(
+        ...,
+        title="Bad Request",
+        alias=conf.LAMINA_DEFAULT_ERROR_KEY,
+        description="Error message",
+        examples=["JSON parse error"],
+    )
+
+
+class Error422Detail(BaseModel):
+    field: str = Field(
+        ...,
+        title="Field Name",
+        description="Field with Validation Error",
+        examples=["field_name"],
+    )
+    message: str = Field(
+        ...,
+        title="Error Message",
+        description="Validation Error Message",
+        examples=["field required"],
+    )
+
+
+class UnprocessableEntity422(BaseModel):
+    """Default 422 response schema for Lamina handlers."""
+
+    detail: List[Error422Detail] = Field(
+        ...,
+        title="Unprocessable Entity",
+        alias=conf.LAMINA_DEFAULT_ERROR_KEY,
+        description="Validation error message",
+        examples=[{"field": "field_name", "message": "field required"}],
+    )
+
+
+class InternalServerError500(BaseModel):
+    """Default 500 response schema for Lamina handlers."""
+
+    detail: str = Field(
+        ...,
+        title="Internal Server Error",
+        alias=conf.LAMINA_DEFAULT_ERROR_KEY,
+        description="Error message",
+        examples=["Server Error"],
+    )
 
 
 @dataclass
@@ -40,6 +93,7 @@ class SwaggerGenerator:
     extra_data: Dict[str, Any] = None
     openapi_version: str = "3.1.0"
     json_schema_dialect: str | None = None
+    extra_responses: Optional[Dict[str, ExtraResponsesDict]] = None
 
     @staticmethod
     def _get_model_schema_ref(
@@ -57,9 +111,7 @@ class SwaggerGenerator:
         if model is None:
             return None
         name, _ = self._get_model_schema_ref(model)
-        return {
-            "application/json": {"schema": {"$ref": f"#/components/schemas/{name}"}}
-        }
+        return {"schema": {"$ref": f"#/components/schemas/{name}"}}
 
     @staticmethod
     def get_info(
@@ -77,7 +129,7 @@ class SwaggerGenerator:
         if summary:
             info["summary"] = summary
         if description:
-            info["description"] = commonmark(description)
+            info["description"] = markdown_to_html(description)
         if contact:
             info["contact"] = contact
         if license_info:
@@ -106,7 +158,7 @@ class SwaggerGenerator:
             server_objs = [{"url": url}]
         return server_objs
 
-    def get_responses(self, view):
+    def get_responses(self, view: ViewData) -> Dict[str, ResponseObject]:
         responses: Dict[str, ResponseObject] = {}
         response_content = self._content_for_model(view.response)
         responses[str(conf.LAMINA_DEFAULT_SUCCESS_STATUS_CODE)] = ResponseObject(
@@ -114,22 +166,39 @@ class SwaggerGenerator:
                 "description": view.extract_extras().get(
                     "response_description", "Successful Response"
                 ),
-                "content": response_content
-                or {"application/json": {"schema": {"type": "string"}}},
+                "content": (
+                    {view.produce_media_type or "application/json": response_content}
+                    if response_content
+                    else {"application/json": {"schema": {"type": "string"}}}
+                ),
             }
         )
-        responses["400"] = {"description": "Bad Request"}
-        responses["500"] = {"description": "Internal Server Error"}
 
-        # Custom responses from decorator
-        custom_responses = view.extra_responses or {}
-        for status_code, cfg in custom_responses.items():
+        for model in [BadRequest400, UnprocessableEntity422, InternalServerError500]:
+            class_name = model.__name__
+            status_code = "".join(filter(str.isdigit, class_name))
+            description = "".join(
+                " " + char if char.isupper() else char for char in class_name[:-3]
+            ).strip()
+            content = self._content_for_model(model)
+            responses[status_code] = ResponseObject(
+                **{
+                    "description": description,
+                    "content": {"application/json": content}
+                    or {"application/json": {"schema": {"type": "string"}}},
+                }
+            )
+
+        extra_responses = self.extra_responses or {}
+        extra_responses |= view.extra_responses or {}
+
+        for status_code, cfg in extra_responses.items():
             code_str = str(status_code)
             schema_model = cfg.get("schema") if isinstance(cfg, dict) else None
             desc = cfg.get("description") if isinstance(cfg, dict) else None
             content = None
             if schema_model is not None:
-                name, _schema_def = extract_schema_info(schema_model)
+                name, _ = extract_schema_info(schema_model)
                 content = {
                     "application/json": {
                         "schema": {"$ref": f"#/components/schemas/{name}"}
@@ -161,7 +230,7 @@ class SwaggerGenerator:
             if request_body_content:
                 operation["requestBody"] = RequestBodyObject(
                     **{
-                        "content": request_body_content,
+                        "content": {view.accept_media_type: request_body_content},
                         "required": True,
                     }
                 )
@@ -187,6 +256,20 @@ class SwaggerGenerator:
         response schemas declared via the decorator.
         """
         schemas: Dict[str, Any] = {}
+
+        extra_response_models = [
+            resp_cfg["schema"] for resp_cfg in (self.extra_responses or {}).values()
+        ] + [BadRequest400, UnprocessableEntity422, InternalServerError500]
+
+        for model in extra_response_models:
+            name, schema = self._get_model_schema_ref(model)
+            if name not in schemas:
+                schemas[name] = schema
+                if "$defs" in schema:
+                    defs = schema.pop("$defs")
+                    for def_name, def_schema in defs.items():
+                        if def_name not in schemas:
+                            schemas[def_name] = def_schema
 
         for view in self.view_data:
             view_schemas = view.resolve_schemas()
@@ -232,11 +315,6 @@ class SwaggerGenerator:
             return [{name: []} for name in security_schemes.keys()]
         return None
 
-    @staticmethod
-    def get_tags() -> List[Dict[str, str]] | None:
-        """No top-level tags aggregation yet."""
-        return None
-
     def generate(
         self,
         title: str,
@@ -252,6 +330,7 @@ class SwaggerGenerator:
         security_schemes: Optional[Dict[str, Any]] | None = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
         external_docs: Optional[OpenAPIExternalDocumentationObject] | None = None,
+        tags: Optional[List[OpenAPITagsObject]] = None,
     ) -> OpenAPIObject:
         """Generate an OpenAPI specification using the class helpers."""
         spec: OpenAPIObject = {
@@ -278,4 +357,6 @@ class SwaggerGenerator:
             spec["security"] = security
         if external_docs:
             spec["externalDocs"] = external_docs
+        if tags:
+            spec["tags"] = tags
         return spec
