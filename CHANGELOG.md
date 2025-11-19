@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.1.0 (2025-11-19)
+
+### Features
+
+* feat: enhance OpenAPI support with custom error responses and markdown conversion ([`12e9598`](https://github.com/megalus/lamina/commit/12e9598079d73a350db89f6ef2dc16718b12c22b))
+
+
 ## v6.0.1 (2025-09-26)
 
 ### Fixes
