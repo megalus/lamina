@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.0 (2025-12-22)
+
+### Features
+
+* feat: add automatic generation of Markdown tables for Pydantic models in documentation ([`c12b7a4`](https://github.com/megalus/lamina/commit/c12b7a46d7e55f619b36e6ce3120d25242add6d0))
+
+
 ## v6.1.0 (2025-11-19)
 
 ### Features
