@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Type
 
@@ -113,8 +114,8 @@ class SwaggerGenerator:
         name, _ = self._get_model_schema_ref(model)
         return {"schema": {"$ref": f"#/components/schemas/{name}"}}
 
-    @staticmethod
     def get_info(
+        self,
         *,
         title: str,
         version: str,
@@ -128,8 +129,25 @@ class SwaggerGenerator:
         info: OpenAPIInfoObject = {"title": title, "version": version}
         if summary:
             info["summary"] = summary
+        full_desc = ""
         if description:
-            info["description"] = markdown_to_html(description)
+            full_desc = markdown_to_html(description)
+        # At the end of the HTML, add the Last Updated info
+        all_last_updated = [
+            view.file_last_update for view in self.view_data if view.file_last_update
+        ]
+        last_updated_text = (
+            datetime.datetime.fromtimestamp(max(all_last_updated)).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            if all_last_updated
+            else None
+        )
+        if last_updated_text:
+            full_desc += (
+                f"<hr><p><em>Document Last Updated: " f"{last_updated_text}</em></p>"
+            )
+        info["description"] = full_desc
         if contact:
             info["contact"] = contact
         if license_info:

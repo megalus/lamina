@@ -107,6 +107,10 @@ class LaminaSettings:
     def LAMINA_DEFAULT_SUCCESS_STATUS_CODE(self) -> int:
         return int(self._get_setting("default_success_status_code", 200))
 
+    @property
+    def LAMINA_GENERATE_FIELD_TABLES_IN_DOCS(self):
+        return self._get_setting("generate_field_tables_in_docs", True)
+
 
 # Create a single instance of the settings class
 _lamina_settings = LaminaSettings(get_toml_configuration())

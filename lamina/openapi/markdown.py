@@ -75,7 +75,7 @@ def markdown_to_html(
             "%Y-%m-%d %H:%M:%S"
         )
         html_out += (
-            f"<hr><p><em>Document Last Updated: " f"{last_updated_text}</em></p>"
+            f"<hr><p><em>Resource Last Updated: " f"{last_updated_text}</em></p>"
         )
 
     return html_out

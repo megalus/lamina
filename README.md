@@ -291,6 +291,7 @@ Lamina can generate an OpenAPI 3.1 document by inspecting your decorated handler
 - Operation summary/description are derived from the handler docstring when present
 - The first line is used as summary
 - The following free-text (until Args/Returns/etc.) as description.
+- If `LAMINA_GENERATE_FIELD_TABLES_IN_DOCS` is `True` (default), Lamina will automatically generate Markdown tables for all Pydantic models used in the handler (including nested models) and append them to the description.
 - If no docstring is present, the generator falls back to json_schema_extra values; if neither exists, the summary becomes the function name in title case (e.g., foo_bar -> Foo Bar) and the description is empty.
 
 ### Adding/Remove the Handler from the Spec:

@@ -1,5 +1,7 @@
 import datetime
 import os
+from decimal import Decimal
+from enum import Enum
 from textwrap import dedent
 from typing import Any, Dict
 
@@ -359,7 +361,7 @@ def test_docstring_summary_and_description_and_defaults():
 mod_time = os.path.getmtime(__file__)
 last_updated = datetime.datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d %H:%M:%S")
 
-expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
+markdown_expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
 <p>This is a <strong>bold</strong> statement.</p>
 <p>This is an <em>italic</em> word.</p>
 <p>This is a <code>code snippet</code>.</p>
@@ -411,7 +413,188 @@ expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
     B--&gt;D;
     C--&gt;D;
 </code></pre>
-<hr><p><em>Document Last Updated: {last_updated}</em></p>"""
+<h2>Request Body Fields</h2>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>x</td>
+  <td>integer</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>--</td>
+  <td>--</td>
+</tr>
+</tbody>
+</table>
+<hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
+
+
+table_expected_result = f"""<p>This is the main description of the View.
+Must be at the top.</p>
+<h2>This is the Query Parameters Title.</h2>
+<p>Here is the description for the query parameters.</p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>search</td>
+  <td>string</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>Search term for filtering items</td>
+  <td>example</td>
+</tr>
+<tr>
+  <td>limit</td>
+  <td>integer</td>
+  <td>No</td>
+  <td>10</td>
+  <td>Maximum number of items to return</td>
+  <td>5</td>
+</tr>
+</tbody>
+</table>
+<h2>This is the InModel Request Body Title.</h2>
+<p>This is the InModel Request Body description.
+Must be at the middle.</p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>id</td>
+  <td>integer</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>The item ID</td>
+  <td>1</td>
+</tr>
+<tr>
+  <td>name</td>
+  <td>string</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>The item name</td>
+  <td>item</td>
+</tr>
+<tr>
+  <td>quantity</td>
+  <td>integer</td>
+  <td>No</td>
+  <td>1</td>
+  <td>The item quantity</td>
+  <td>10</td>
+</tr>
+<tr>
+  <td>unitPrice</td>
+  <td>number</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>The price per unit</td>
+  <td>9.99</td>
+</tr>
+<tr>
+  <td>unitType</td>
+  <td>enum</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>The type of unit</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>enabled</td>
+  <td>boolean</td>
+  <td>No</td>
+  <td>True</td>
+  <td>Whether the item is enabled</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>createdAt</td>
+  <td>datetime</td>
+  <td>No</td>
+  <td>--</td>
+  <td>The creation timestamp</td>
+  <td>2024-01-01T12:00:00Z</td>
+</tr>
+</tbody>
+</table>
+<h2>This is the OutModel Response Body Title.</h2>
+<p>Actual response is inside the 'result' field.</p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>result</td>
+  <td>object</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>--</td>
+  <td>--</td>
+</tr>
+</tbody>
+</table>
+<h2>This is the ResultModel Response Body Title.</h2>
+<p>This is the ResultModel Response Body description.</p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>id</td>
+  <td>integer</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>The result item ID</td>
+  <td>1</td>
+</tr>
+</tbody>
+</table>
+<hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
 
 
 def test_markdown_to_html_in_descriptions():
@@ -478,7 +661,7 @@ def test_markdown_to_html_in_descriptions():
     desc = spec["paths"]["/convert"]["post"]["description"]
 
     # Assert
-    assert dedent(desc) == dedent(expected_result)
+    assert dedent(desc) == dedent(markdown_expected_result)
 
 
 def test_custom_content_types():
@@ -522,3 +705,102 @@ def test_custom_content_types():
     assert response_content == {
         "text/plain": {"schema": {"$ref": "#/components/schemas/OutModel"}}
     }
+
+
+def test_automatic_parameters():
+    # Arrange
+    class UnitType(Enum):
+        PIECE = "piece"
+        KG = "kg"
+        LITER = "liter"
+
+    class InModel(BaseModel):
+        """This is the InModel Request Body Title.
+
+        This is the InModel Request Body description.
+        Must be at the middle.
+        """
+
+        id: int = Field(title="ID", examples=[1], description="The item ID")
+        name: str = Field(title="Name", description="The item name", examples=["item"])
+        quantity: int = Field(
+            title="Quantity", default=1, description="The item quantity", examples=[10]
+        )
+        unit_price: Decimal = Field(
+            alias="unitPrice",
+            title="Unit Price",
+            description="The price per unit",
+            examples=["9.99"],
+        )
+        unit_type: UnitType = Field(
+            alias="unitType",
+            title="Unit Type",
+            description="The type of unit",
+            json_schema_extra={"enum": [e.value for e in UnitType]},
+        )
+        enabled: bool = Field(
+            title="Enabled",
+            default=True,
+            description="Whether the item is enabled",
+        )
+        created_at: datetime.datetime = Field(
+            alias="createdAt",
+            title="Created At",
+            default_factory=lambda: datetime.datetime.now(datetime.UTC),
+            description="The creation timestamp",
+            examples=["2024-01-01T12:00:00Z"],
+        )
+
+    class ResultModel(BaseModel):
+        """This is the ResultModel Response Body Title.
+
+        This is the ResultModel Response Body description.
+
+        """
+
+        id: int = Field(title="ID", description="The result item ID", examples=[1])
+
+    class OutModel(BaseModel):
+        """This is the OutModel Response Body Title.
+
+        Actual response is inside the 'result' field.
+
+        """
+
+        result: ResultModel
+
+    class QueryModel(BaseModel):
+        """This is the Query Parameters Title.
+
+        Here is the description for the query parameters.
+
+        """
+
+        search: str = Field(
+            title="Search",
+            description="Search term for filtering items",
+            examples=["example"],
+        )
+        limit: int = Field(
+            title="Limit",
+            default=10,
+            description="Maximum number of items to return",
+            examples=[5],
+        )
+
+    @lamina(path="/items", params_in=QueryModel, schema_in=InModel, schema_out=OutModel)
+    def create_item(request: Request):
+        """Return an item by ID.
+
+        This is the main description of the View.
+        Must be at the top.
+
+        """
+        return {"id": request.data.id}
+
+    # Act
+    spec = get_openapi_spec(title="Test", version="1.0.0")
+    html_desc = spec["paths"]["/items"]["post"]["description"]
+
+    # Assert
+    assert dedent(html_desc) == dedent(table_expected_result)
