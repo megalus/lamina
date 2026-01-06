@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.1 (2026-01-06)
+
+### Fixes
+
+* fix: parse of required and non-required fields in OpenAPI schema ([`ea4a3cb`](https://github.com/megalus/lamina/commit/ea4a3cbc00c358eb86f928d8b89de8a84dc41db7))
+
+
 ## v6.2.0 (2025-12-22)
 
 ### Features
