@@ -596,6 +596,55 @@ Must be at the middle.</p>
 </table>
 <hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
 
+non_required_fields_expected_result = f"""<h2>Request Body Fields</h2>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>requiredField</td>
+  <td>string</td>
+  <td>Yes</td>
+  <td>--</td>
+  <td>The field name</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>defaultValueField</td>
+  <td>string</td>
+  <td>No</td>
+  <td>foo</td>
+  <td>The field with a default value</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>nullableField</td>
+  <td>string</td>
+  <td>No</td>
+  <td>--</td>
+  <td>The nullable field</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>nullableWithDefaultField</td>
+  <td>string</td>
+  <td>No</td>
+  <td>bar</td>
+  <td>The nullable field with a default value</td>
+  <td>--</td>
+</tr>
+</tbody>
+</table>
+<hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
+
 
 def test_markdown_to_html_in_descriptions():
     # Arrange
@@ -804,3 +853,44 @@ def test_automatic_parameters():
 
     # Assert
     assert dedent(html_desc) == dedent(table_expected_result)
+
+
+def test_required_fields_in_schema():
+    # Arrange
+    class InModel(BaseModel):
+        required_field: str = Field(
+            ...,
+            alias="requiredField",
+            title="Required Field",
+            description="The field name",
+        )
+        default_value_field: str = Field(
+            "foo",
+            alias="defaultValueField",
+            title="Default Value Field",
+            description="The field with a default value",
+        )
+        nullable_field: str | None = Field(
+            None,
+            alias="nullableField",
+            title="Nullable Field",
+            description="The nullable field",
+        )
+        nullable_with_default_field: str | None = Field(
+            "bar",
+            alias="nullableWithDefaultField",
+            title="Nullable With Default Field",
+            description="The nullable field with a default value",
+        )
+
+    @lamina(path="/test", schema_in=InModel)
+    def handler(request: Request):
+        """Test required and non-required fields in schema."""
+        return {"required_field": request.data.required_field}
+
+    # Act
+    spec = get_openapi_spec(title="Test", version="1.0.0")
+    html_desc = spec["paths"]["/test"]["post"]["description"]
+
+    # Assert
+    assert dedent(html_desc) == dedent(non_required_fields_expected_result)

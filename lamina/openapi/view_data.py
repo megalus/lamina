@@ -3,6 +3,7 @@ import inspect
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
+from types import UnionType
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from caseconverter import camelcase, kebabcase, titlecase
@@ -202,9 +203,25 @@ class ViewData:
             return "enum"
         if inspect.isclass(annotation) and issubclass(annotation, BaseModel):
             return "object"
+        # Check for UnionType type | None
+        if type(annotation) is UnionType:
+            args = annotation.__args__
+            non_none_args = [arg for arg in args if arg is not type(None)]
+            if len(non_none_args) == 1:
+                return self._python_to_openapi_type(non_none_args[0])
+            return " or ".join(
+                [self._python_to_openapi_type(arg) for arg in non_none_args]
+            )
+
         return (
-            annotation.__name__ if hasattr(annotation, "__name__") else str(annotation)
-        ).lower()
+            (
+                annotation.__name__
+                if hasattr(annotation, "__name__")
+                else str(annotation)
+            )
+            .lower()
+            .replace("|", " or ")
+        )
 
     def _get_all_models(self) -> List[Tuple[Type[BaseModel | RootModel], str]]:
         """Recursively collect all Pydantic models used in the view."""
@@ -287,13 +304,10 @@ class ViewData:
                     "|-------|------|----------|---------------"
                     "|-------------|----------|\n"
                 )
-                required_fields = model.model_json_schema().get("required") or []
                 for name, field in fields.items():
                     annotation = field.annotation
                     table_t = self._python_to_openapi_type(annotation)
-                    is_required = (
-                        name in required_fields or field.alias in required_fields
-                    )
+                    is_required = field.is_required()
                     default_value = (
                         field.default
                         if field.default is not None
