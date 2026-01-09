@@ -1,7 +1,18 @@
 # CHANGELOG
 
 
+## v6.2.5 (2026-01-09)
+
+### Unknown
+
+* Merge remote-tracking branch 'origin/main' ([`34783c6`](https://github.com/megalus/lamina/commit/34783c6c079e27a7661d6647e46dacd449396571))
+
+
 ## v6.2.4 (2026-01-09)
+
+### Fixes
+
+* fix: enhance Markdown output with horizontal rules and bold formatting for fields ([`f6a34c5`](https://github.com/megalus/lamina/commit/f6a34c510d8ccac9e540040bafbf1c6459f14eab))
 
 ### Unknown
 
