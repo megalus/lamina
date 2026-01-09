@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.2 (2026-01-09)
+
+### Fixes
+
+* fix: add horizontal rule to Markdown conversion output ([`fa8ab71`](https://github.com/megalus/lamina/commit/fa8ab71ffab13d022b9e7298c9e7764901a1a115))
+
+
 ## v6.2.1 (2026-01-06)
 
 ### Fixes
