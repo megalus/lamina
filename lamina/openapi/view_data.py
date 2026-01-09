@@ -325,10 +325,14 @@ class ViewData:
 
                     desc = field.description or "--"
 
-                    # Pydantic v2 examples can be in field.examples or json_schema_extra
+                    # Pydantic v2 examples can be in field.examples
+                    # or json_schema_extra `examples` or `doc_examples` field
+                    # Use `doc_examples` when you want to show examples only in docs
+                    # and not in the generated JSON Schema.
                     examples = (
                         getattr(field, "examples", None)
                         or (field.json_schema_extra or {}).get("examples")
+                        or (field.json_schema_extra or {}).get("doc_examples")
                         or []
                     )
                     examples_str = (

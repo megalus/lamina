@@ -361,7 +361,7 @@ def test_docstring_summary_and_description_and_defaults():
 mod_time = os.path.getmtime(__file__)
 last_updated = datetime.datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d %H:%M:%S")
 
-markdown_expected_result = f"""<hr><h3>Paragraphs and Text Formatting</h3>
+markdown_expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
 <p>This is a <strong>bold</strong> statement.</p>
 <p>This is an <em>italic</em> word.</p>
 <p>This is a <code>code snippet</code>.</p>
@@ -439,7 +439,7 @@ markdown_expected_result = f"""<hr><h3>Paragraphs and Text Formatting</h3>
 <hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
 
 
-table_expected_result = f"""<hr><p>This is the main description of the View.
+table_expected_result = f"""<p>This is the main description of the View.
 Must be at the top.</p>
 <h2>This is the Query Parameters Title.</h2>
 <p>Here is the description for the query parameters.</p>
@@ -596,7 +596,7 @@ Must be at the middle.</p>
 </table>
 <hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
 
-non_required_fields_expected_result = f"""<hr><h2>Request Body Fields</h2>
+non_required_fields_expected_result = f"""<h2>Request Body Fields</h2>
 <table>
 <thead>
 <tr>
