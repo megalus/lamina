@@ -66,7 +66,7 @@ def markdown_to_html(
         The converted HTML string, or None if `text` is None.
     """
     # Convert Markdown to HTML.
-    html_out = _markdown(text)
+    html_out = "<hr>" + _markdown(text)
 
     # At the end of the HTML, add the Last Updated info
     text_exists = text is not None and text.strip() != ""
