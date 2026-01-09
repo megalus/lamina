@@ -1,7 +1,18 @@
 # CHANGELOG
 
 
+## v6.2.4 (2026-01-09)
+
+### Unknown
+
+* Merge remote-tracking branch 'origin/main' ([`61f31b1`](https://github.com/megalus/lamina/commit/61f31b151de84a96dd89ad36dcd5afb930b6de45))
+
+
 ## v6.2.3 (2026-01-09)
+
+### Fixes
+
+* fix: add field `doc_examples` and fix tests ([`cec7d27`](https://github.com/megalus/lamina/commit/cec7d27dd6d5cb38b4cc90fd12f13bd402ce0f39))
 
 ### Unknown
 
