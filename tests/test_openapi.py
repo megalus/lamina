@@ -413,6 +413,7 @@ markdown_expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
     B--&gt;D;
     C--&gt;D;
 </code></pre>
+<hr />
 <h2>Request Body Fields</h2>
 <table>
 <thead>
@@ -427,9 +428,9 @@ markdown_expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
 </thead>
 <tbody>
 <tr>
-  <td>x</td>
+  <td><strong>x</strong></td>
   <td>integer</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>--</td>
   <td>--</td>
@@ -441,6 +442,7 @@ markdown_expected_result = f"""<h3>Paragraphs and Text Formatting</h3>
 
 table_expected_result = f"""<p>This is the main description of the View.
 Must be at the top.</p>
+<hr />
 <h2>This is the Query Parameters Title.</h2>
 <p>Here is the description for the query parameters.</p>
 <table>
@@ -456,9 +458,9 @@ Must be at the top.</p>
 </thead>
 <tbody>
 <tr>
-  <td>search</td>
+  <td><strong>search</strong></td>
   <td>string</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>Search term for filtering items</td>
   <td>example</td>
@@ -473,6 +475,7 @@ Must be at the top.</p>
 </tr>
 </tbody>
 </table>
+<hr />
 <h2>This is the InModel Request Body Title.</h2>
 <p>This is the InModel Request Body description.
 Must be at the middle.</p>
@@ -489,51 +492,35 @@ Must be at the middle.</p>
 </thead>
 <tbody>
 <tr>
-  <td>id</td>
+  <td><strong>id</strong></td>
   <td>integer</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>The item ID</td>
   <td>1</td>
 </tr>
 <tr>
-  <td>name</td>
+  <td><strong>name</strong></td>
   <td>string</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>The item name</td>
   <td>item</td>
 </tr>
 <tr>
-  <td>quantity</td>
-  <td>integer</td>
-  <td>No</td>
-  <td>1</td>
-  <td>The item quantity</td>
-  <td>10</td>
-</tr>
-<tr>
-  <td>unitPrice</td>
+  <td><strong>unitPrice</strong></td>
   <td>number</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>The price per unit</td>
   <td>9.99</td>
 </tr>
 <tr>
-  <td>unitType</td>
+  <td><strong>unitType</strong></td>
   <td>enum</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>The type of unit</td>
-  <td>--</td>
-</tr>
-<tr>
-  <td>enabled</td>
-  <td>boolean</td>
-  <td>No</td>
-  <td>True</td>
-  <td>Whether the item is enabled</td>
   <td>--</td>
 </tr>
 <tr>
@@ -544,8 +531,25 @@ Must be at the middle.</p>
   <td>The creation timestamp</td>
   <td>2024-01-01T12:00:00Z</td>
 </tr>
+<tr>
+  <td>enabled</td>
+  <td>boolean</td>
+  <td>No</td>
+  <td>True</td>
+  <td>Whether the item is enabled</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>quantity</td>
+  <td>integer</td>
+  <td>No</td>
+  <td>1</td>
+  <td>The item quantity</td>
+  <td>10</td>
+</tr>
 </tbody>
 </table>
+<hr />
 <h2>This is the OutModel Response Body Title.</h2>
 <p>Actual response is inside the 'result' field.</p>
 <table>
@@ -561,16 +565,16 @@ Must be at the middle.</p>
 </thead>
 <tbody>
 <tr>
-  <td>result</td>
+  <td><strong>result</strong></td>
   <td>object</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>--</td>
   <td>--</td>
 </tr>
 </tbody>
 </table>
-<h2>This is the ResultModel Response Body Title.</h2>
+<h3>This is the ResultModel Response Body Title.</h3>
 <p>This is the ResultModel Response Body description.</p>
 <table>
 <thead>
@@ -585,9 +589,9 @@ Must be at the middle.</p>
 </thead>
 <tbody>
 <tr>
-  <td>id</td>
+  <td><strong>id</strong></td>
   <td>integer</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>The result item ID</td>
   <td>1</td>
@@ -596,7 +600,8 @@ Must be at the middle.</p>
 </table>
 <hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
 
-non_required_fields_expected_result = f"""<h2>Request Body Fields</h2>
+non_required_fields_expected_result = f"""<hr />
+<h2>Request Body Fields</h2>
 <table>
 <thead>
 <tr>
@@ -610,9 +615,9 @@ non_required_fields_expected_result = f"""<h2>Request Body Fields</h2>
 </thead>
 <tbody>
 <tr>
-  <td>requiredField</td>
+  <td><strong>requiredField</strong></td>
   <td>string</td>
-  <td>Yes</td>
+  <td><strong>Yes</strong></td>
   <td>--</td>
   <td>The field name</td>
   <td>--</td>

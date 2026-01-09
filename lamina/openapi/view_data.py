@@ -262,9 +262,9 @@ class ViewData:
                         ):
                             collect(arg, f"\n\n### {titlecase(arg.__name__)}\n\n")
 
-        collect(self.params, "\n\n## Query Parameters\n\n")
-        collect(self.request, "\n\n## Request Body Fields\n\n")
-        collect(self.response, "\n\n## Response Body Fields\n\n")
+        collect(self.params, "\n\n---\n\n## Query Parameters\n\n")
+        collect(self.request, "\n\n---\n\n## Request Body Fields\n\n")
+        collect(self.response, "\n\n---\n\n## Response Body Fields\n\n")
 
         # Add models from extra responses
         if self.extra_responses:
@@ -292,9 +292,10 @@ class ViewData:
                     return_html=False,
                     add_line_before=True,
                 )
-                title = f"\n\n## {doc_title}\n\n" if doc_title else default_title
+                separator = default_title.split(" ")[0]
+                title = f"{separator} {doc_title}\n\n" if doc_title else default_title
                 if not title:
-                    title = f"\n\n## {titlecase(model.__name__)}\n\n"
+                    title = f"{separator} {titlecase(model.__name__)}\n\n"
                 model_table = title
                 if doc_description:
                     model_table += f"{doc_description}\n\n"
@@ -306,6 +307,7 @@ class ViewData:
                     "|-------|------|----------|---------------"
                     "|-------------|----------|\n"
                 )
+                model_fields = []
                 for name, field in fields.items():
                     annotation = field.annotation
                     table_t = self._python_to_openapi_type(annotation)
@@ -338,10 +340,29 @@ class ViewData:
                     examples_str = (
                         ", ".join(str(ex) for ex in examples) if examples else "--"
                     )
+                    model_fields.append(
+                        {
+                            "name": field.alias or name,
+                            "type": table_t,
+                            "required": is_required,
+                            "default": default_value,
+                            "description": desc,
+                            "examples": examples_str,
+                        }
+                    )
+
+                # Sort fields by required first, then by name
+                model_fields.sort(key=lambda f: (not f["required"], f["name"].lower()))
+
+                for field in model_fields:
+                    name = (
+                        f"**{field['name']}**" if field["required"] else field["name"]
+                    )
                     model_table += (
-                        f"| {field.alias or name} | {table_t} | "
-                        f"{'Yes' if is_required else 'No'} | "
-                        f"{default_value} | {desc} | {examples_str} |\n"
+                        f"| {name} | {field['type']} | "
+                        f"{'**Yes**' if field['required'] else 'No'} | "
+                        f"{field['default']} | {field['description']} | "
+                        f"{field['examples']} |\n"
                     )
                 description += model_table
         return description
