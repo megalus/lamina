@@ -1,9 +1,18 @@
 # CHANGELOG
 
 
+## v6.2.3 (2026-01-09)
+
+### Unknown
+
+* Merge remote-tracking branch 'origin/main' ([`a53dee3`](https://github.com/megalus/lamina/commit/a53dee3db40fc990a600130235a341db5062b8a7))
+
+
 ## v6.2.2 (2026-01-09)
 
 ### Fixes
+
+* fix: make horizontal line optional ([`fbcdb89`](https://github.com/megalus/lamina/commit/fbcdb89d1ff64c3e32c667646e4e9bc3142f3954))
 
 * fix: add horizontal rule to Markdown conversion output ([`fa8ab71`](https://github.com/megalus/lamina/commit/fa8ab71ffab13d022b9e7298c9e7764901a1a115))
 
