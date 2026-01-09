@@ -113,6 +113,7 @@ class ViewData:
         last_updated: Optional[datetime] = None,
         add_field_tables: bool = False,
         return_html: bool = True,
+        add_line_before: bool = False,
     ) -> Tuple[str | None, str | None]:
         """Parse view docstring into a summary and a description.
 
@@ -159,7 +160,7 @@ class ViewData:
                     view_doc += "\n\n"
                 view_doc += field_tables
         if return_html:
-            description = markdown_to_html(view_doc, last_updated)
+            description = markdown_to_html(view_doc, last_updated, add_line_before)
         else:
             description = view_doc
         return summary, description
@@ -289,6 +290,7 @@ class ViewData:
                     docstring=model_docstring,
                     add_field_tables=False,
                     return_html=False,
+                    add_line_before=True,
                 )
                 title = f"\n\n## {doc_title}\n\n" if doc_title else default_title
                 if not title:

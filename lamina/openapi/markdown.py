@@ -55,18 +55,21 @@ def _inject_mermaid_blocks(text: str, mermaid_to_html: Callable[[str], str]) -> 
 def markdown_to_html(
     text: str,
     last_updated: Optional[datetime] = None,
+    add_line_before: Optional[bool] = False,
 ) -> str:
     """Convert Markdown (GFM) to HTML, preserving Mermaid as HTML.
 
     Args:
         text: The Markdown source string or None.
         last_updated: Optional datetime to append as "Last Updated" info.
+        add_line_before: If True, adds a horizontal line before the content.
 
     Returns:
         The converted HTML string, or None if `text` is None.
     """
     # Convert Markdown to HTML.
-    html_out = "<hr>" + _markdown(text)
+    html_out = "<hr>" if add_line_before else ""
+    html_out += _markdown(text)
 
     # At the end of the HTML, add the Last Updated info
     text_exists = text is not None and text.strip() != ""
