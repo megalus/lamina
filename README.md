@@ -341,7 +341,7 @@ class CreateItemOut(BaseModel):
     id: int
     name: str
 
-# Default Values
+# Default Values are:
 # * Path: /create-item from LAMINA_USE_OBJECT_NAME=function
 # * Method: POST
 # * Response Status Codes: 200, 400, 500
