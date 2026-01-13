@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.8 (2026-01-13)
+
+### Fixes
+
+* fix: publishing error during actions ([`1f91491`](https://github.com/megalus/lamina/commit/1f91491762bd3a7fe1acd4da6ee2cc626b8896d4))
+
+
 ## v6.2.7 (2026-01-13)
 
 ### Fixes
