@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from types import UnionType
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from caseconverter import camelcase, kebabcase, titlecase
 from pydantic import BaseModel, RootModel
@@ -213,6 +213,11 @@ class ViewData:
             return "enum"
         if inspect.isclass(annotation) and issubclass(annotation, BaseModel):
             return "object"
+
+        # Pydantic Literal is treated as enum
+        if getattr(annotation, "__origin__", None) is Literal:
+            return "enum"
+
         # Check for UnionType type | None
         if (
             type(annotation) is UnionType
@@ -226,15 +231,12 @@ class ViewData:
                 [self._python_to_openapi_type(arg) for arg in non_none_args]
             )
 
-        return (
-            (
-                annotation.__name__
-                if hasattr(annotation, "__name__")
-                else str(annotation)
-            )
-            .lower()
-            .replace("|", ", ")
-        )
+        name = getattr(annotation, "__origin__", None)
+        if name:
+            name = getattr(name, "__name__", str(name))
+        else:
+            name = getattr(annotation, "__name__", str(annotation))
+        return name.lower().replace("|", ", ")
 
     def _get_all_models(self) -> List[Tuple[Type[BaseModel | RootModel], str]]:
         """Recursively collect all Pydantic models used in the view."""

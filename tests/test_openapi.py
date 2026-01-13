@@ -3,11 +3,11 @@ import os
 from decimal import Decimal
 from enum import Enum
 from textwrap import dedent
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 import pytest
 from openapi_spec_validator import validate
-from pydantic import BaseModel, ConfigDict, Field, RootModel
+from pydantic import UUID4, BaseModel, ConfigDict, Field, RootModel
 
 import lamina.main as lamina_main
 from lamina import Request, get_openapi_spec, lamina
@@ -932,6 +932,22 @@ optional_and_array_expected_result = f"""<hr />
   <td>--</td>
 </tr>
 <tr>
+  <td>literal</td>
+  <td>enum</td>
+  <td>No</td>
+  <td>LiteralValue</td>
+  <td>A field with a literal value</td>
+  <td>LiteralValue</td>
+</tr>
+<tr>
+  <td>modelId</td>
+  <td>uuid, string</td>
+  <td>No</td>
+  <td>--</td>
+  <td>An optional model ID that can be UUID4 or string</td>
+  <td>--</td>
+</tr>
+<tr>
   <td>optionalField</td>
   <td>boolean</td>
   <td>No</td>
@@ -999,6 +1015,18 @@ def test_optional_and_array_fields_in_schema():
             ...,
             title="Numbers",
             description="A list of numbers",
+        )
+        literal: Literal["LiteralValue"] = Field(
+            "LiteralValue",
+            title="Literal Field",
+            description="A field with a literal value",
+            examples=["LiteralValue"],
+        )
+        model_id: Optional[Union[UUID4, str]] = Field(
+            None,
+            title="Model ID",
+            alias="modelId",
+            description="An optional model ID that can be UUID4 or string",
         )
 
     @lamina(path="/optional-array", schema_in=InModel)
