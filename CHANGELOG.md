@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.7 (2026-01-13)
+
+### Fixes
+
+* fix: add support for Pydantic Literal type and enhance OpenAPI schema representation ([`f7cdd14`](https://github.com/megalus/lamina/commit/f7cdd1401a85469ae5d12004a640680ada08501b))
+
+
 ## v6.2.6 (2026-01-13)
 
 ### Fixes
