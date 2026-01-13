@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.6 (2026-01-13)
+
+### Fixes
+
+* fix: improve OpenAPI type representation for arrays and unions in schema ([`dcb3f43`](https://github.com/megalus/lamina/commit/dcb3f43eeb7f2fa783e2a7fa89425e5668c9e9e8))
+
+
 ## v6.2.5 (2026-01-09)
 
 ### Unknown
