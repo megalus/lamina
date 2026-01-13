@@ -3,7 +3,7 @@ import os
 from decimal import Decimal
 from enum import Enum
 from textwrap import dedent
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Union
 
 import pytest
 from openapi_spec_validator import validate
@@ -899,3 +899,119 @@ def test_required_fields_in_schema():
 
     # Assert
     assert dedent(html_desc) == dedent(non_required_fields_expected_result)
+
+
+optional_and_array_expected_result = f"""<hr />
+<h2>Request Body Fields</h2>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>items</strong></td>
+  <td>array[object]</td>
+  <td><strong>Yes</strong></td>
+  <td>--</td>
+  <td>List of sub-items</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td><strong>numbers</strong></td>
+  <td>array[integer, number]</td>
+  <td><strong>Yes</strong></td>
+  <td>--</td>
+  <td>A list of numbers</td>
+  <td>--</td>
+</tr>
+<tr>
+  <td>optionalField</td>
+  <td>boolean</td>
+  <td>No</td>
+  <td>False</td>
+  <td>An optional field</td>
+  <td>--</td>
+</tr>
+</tbody>
+</table>
+<h3>Sub Item</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Required</th>
+  <th>Default Value</th>
+  <th>Description</th>
+  <th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>id</strong></td>
+  <td>integer</td>
+  <td><strong>Yes</strong></td>
+  <td>--</td>
+  <td>The sub-item ID</td>
+  <td>1</td>
+</tr>
+<tr>
+  <td><strong>name</strong></td>
+  <td>string</td>
+  <td><strong>Yes</strong></td>
+  <td>--</td>
+  <td>The sub-item name</td>
+  <td>subitem</td>
+</tr>
+</tbody>
+</table>
+<hr><p><em>Resource Last Updated: {last_updated}</em></p>"""
+
+
+def test_optional_and_array_fields_in_schema():
+    # Arrange
+    class SubItem(BaseModel):
+        id: int = Field(..., title="ID", description="The sub-item ID", examples=[1])
+        name: str = Field(
+            ..., title="Name", description="The sub-item name", examples=["subitem"]
+        )
+
+    class InModel(BaseModel):
+        items: list[SubItem] = Field(
+            ...,
+            title="Items",
+            description="List of sub-items",
+        )
+        optional_field: Optional[bool] = Field(
+            False,
+            title="Optional Field",
+            alias="optionalField",
+            description="An optional field",
+        )
+        numbers: list[Union[int, float]] = Field(
+            ...,
+            title="Numbers",
+            description="A list of numbers",
+        )
+
+    @lamina(path="/optional-array", schema_in=InModel)
+    def handler(request: Request):
+        """Test optional and array fields in schema."""
+        return {
+            "items": request.data.items,
+            "optional_field": request.data.optional_field,
+        }
+
+    # Act
+    spec = get_openapi_spec(title="Test", version="1.0.0")
+    html_desc = spec["paths"]["/optional-array"]["post"]["description"]
+
+    # Assert
+    assert dedent(html_desc) == dedent(optional_and_array_expected_result)

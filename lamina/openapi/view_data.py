@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from types import UnionType
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from caseconverter import camelcase, kebabcase, titlecase
 from pydantic import BaseModel, RootModel
@@ -197,7 +197,16 @@ class ViewData:
         if annotation is str:
             return "string"
         if annotation is list or getattr(annotation, "__origin__", None) is list:
-            return "array"
+            # When possible, we could inspect __args__ for item types
+            array_item_type = "string"
+            args = getattr(annotation, "__args__", [])
+            if args:
+                all_types = set(self._python_to_openapi_type(arg) for arg in args)
+                if len(all_types) == 1:
+                    array_item_type = all_types.pop()
+                else:
+                    array_item_type = ", ".join(sorted(all_types))
+            return f"array[{array_item_type}]"
         if annotation is dict or getattr(annotation, "__origin__", None) is dict:
             return "object"
         if inspect.isclass(annotation) and issubclass(annotation, Enum):
@@ -205,12 +214,15 @@ class ViewData:
         if inspect.isclass(annotation) and issubclass(annotation, BaseModel):
             return "object"
         # Check for UnionType type | None
-        if type(annotation) is UnionType:
+        if (
+            type(annotation) is UnionType
+            or getattr(annotation, "__origin__", None) is Union
+        ):
             args = annotation.__args__
             non_none_args = [arg for arg in args if arg is not type(None)]
             if len(non_none_args) == 1:
                 return self._python_to_openapi_type(non_none_args[0])
-            return " or ".join(
+            return ", ".join(
                 [self._python_to_openapi_type(arg) for arg in non_none_args]
             )
 
@@ -221,7 +233,7 @@ class ViewData:
                 else str(annotation)
             )
             .lower()
-            .replace("|", " or ")
+            .replace("|", ", ")
         )
 
     def _get_all_models(self) -> List[Tuple[Type[BaseModel | RootModel], str]]:
