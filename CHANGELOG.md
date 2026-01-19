@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v6.2.9 (2026-01-19)
+
+### Fixes
+
+* fix: enhance LAMINA_USE_OBJECT_NAME to accept integer index and improve path extraction logic ([`a53226d`](https://github.com/megalus/lamina/commit/a53226d7880f421887bf2b9ce6dd4136bd39f7be))
+
+
 ## v6.2.8 (2026-01-13)
 
 ### Fixes
