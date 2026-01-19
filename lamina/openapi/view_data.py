@@ -7,6 +7,7 @@ from types import UnionType
 from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from caseconverter import camelcase, kebabcase, titlecase
+from loguru import logger
 from pydantic import BaseModel, RootModel
 from pydantic_core import PydanticUndefined
 
@@ -387,23 +388,40 @@ class ViewData:
         if self.path:
             path = self.path
         if not path:
-            # Example: foo.bar.handler
+            # Example: foo.bar.baz.handler
             import_parts = self.import_path.split(".")
             index = None
-            match conf.LAMINA_USE_OBJECT_NAME:
-                case "package":
-                    index = -3
-                case "module":
-                    index = -2
-                case "function":
-                    index = -1
-                case _:
-                    raise ValueError(
-                        "Invalid value for LAMINA_USE_OBJECT_NAME. "
-                        "Expected one of: package, module, function."
-                    )
-            path = import_parts[index if len(import_parts) >= abs(index) else index + 1]
+            use_name = conf.LAMINA_USE_OBJECT_NAME
+            # check if value is a integer
+            if use_name.isdigit() or (
+                use_name.startswith("-") and use_name[1:].isdigit()
+            ):
+                index = int(use_name)
+            else:
+                match conf.LAMINA_USE_OBJECT_NAME:
+                    case "package":
+                        index = -3  # bar
+                    case "module":
+                        index = -2  # baz
+                    case "function":
+                        index = -1  # handler
+                    case _:
+                        raise ValueError(
+                            "Invalid value for LAMINA_USE_OBJECT_NAME. "
+                            "Expected one of: package, module, function. "
+                            "Or an integer index.",
+                        )
+            # Get part using index or default to first part if index out of range
+            path = (
+                import_parts[index]
+                if -len(import_parts) <= index < len(import_parts)
+                else import_parts[0]
+            )
             path = kebabcase(path)
+            logger.debug(
+                f"Path: {path} found from import path: "
+                f"{self.import_path} and index: {index}/{use_name}"
+            )
         return f"/{path}" if not path.startswith("/") else path
 
     def get_operation_id(self):

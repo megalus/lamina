@@ -87,8 +87,8 @@ class LaminaSettings:
         )
 
     @property
-    def LAMINA_USE_OBJECT_NAME(self) -> str:
-        # Options are: package, module, function
+    def LAMINA_USE_OBJECT_NAME(self) -> str | int:
+        # Options are: package, module, function or literal index of path split by '.'
         return self._get_setting("use_object_name", "function")
 
     @property
